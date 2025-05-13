@@ -6,7 +6,14 @@ using System.Threading.Tasks;
 
 namespace Fjordingarnas_Bokningssystem.Models
 {
-    internal class Service
+    public class Service
     {
+        public int Id { get; set; }
+        public string? ServiceName { get; set; }
+        public TimeSpan Duration { get; set; }
+        public decimal Price { get; set; }
+
+        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     }
 }
