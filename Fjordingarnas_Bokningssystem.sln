@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fjordingarnas_Bokningssystem", "Fjordingarnas_Bokningssystem\Fjordingarnas_Bokningssystem.csproj", "{D577E712-CDAB-4A0A-9BFC-C1D83A11D94B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fjordingarnas_Bokningssystem", "Fjordingarnas_Bokningssystem\Fjordingarnas_Bokningssystem.csproj", "{D577E712-CDAB-4A0A-9BFC-C1D83A11D94B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.API", "Bookingsystem.API\BookingSystem.API.csproj", "{6E3C83A8-8139-4188-80D3-756DF7CD7B9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookingSystem.API", "Bookingsystem.API\BookingSystem.API.csproj", "{6E3C83A8-8139-4188-80D3-756DF7CD7B9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.Tests", "BookingSystem.Tests\BookingSystem.Tests.csproj", "{271F2240-B656-4D5D-9F55-E182ACB8CFA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookingSystem.Tests", "BookingSystem.Tests\BookingSystem.Tests.csproj", "{271F2240-B656-4D5D-9F55-E182ACB8CFA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.IntegrationTests", "BookingSystem.IntegrationTests\BookingSystem.IntegrationTests.csproj", "{A540AED0-B066-4BDD-8562-D535C66D045D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookingSystem.IntegrationTests", "BookingSystem.IntegrationTests\BookingSystem.IntegrationTests.csproj", "{A540AED0-B066-4BDD-8562-D535C66D045D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Models\Models.csproj", "{E6303089-39DB-4CF6-B8F4-A8B04F3EA3F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{A540AED0-B066-4BDD-8562-D535C66D045D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A540AED0-B066-4BDD-8562-D535C66D045D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A540AED0-B066-4BDD-8562-D535C66D045D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6303089-39DB-4CF6-B8F4-A8B04F3EA3F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6303089-39DB-4CF6-B8F4-A8B04F3EA3F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6303089-39DB-4CF6-B8F4-A8B04F3EA3F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6303089-39DB-4CF6-B8F4-A8B04F3EA3F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
