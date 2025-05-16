@@ -21,4 +21,8 @@
     <Folder Include="Models\DTOs\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Models\Models.csproj" />
+  </ItemGroup>
+
 </Project>
