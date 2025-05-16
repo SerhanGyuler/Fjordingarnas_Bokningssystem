@@ -20,7 +20,7 @@ namespace Fjordingarnas_Bokningssystem.Models
         public int EmployeeId { get; set; }
         public Employee Employee { get; set; } = new Employee();
 
-        public int ServiceId { get; set; }
-        public Service Service { get; set; } = new Service();
+        public ICollection<Service> Services { get; set; } = new List<Service>();   
     }
 }
+    

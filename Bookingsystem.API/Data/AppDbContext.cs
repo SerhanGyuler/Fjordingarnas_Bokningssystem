@@ -15,25 +15,29 @@ namespace BookingSystem.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Booking => Customer (Many-to-One)    
             modelBuilder.Entity<Booking>()
                 .HasOne(b => b.Customer)
                 .WithMany(c => c.Bookings)
                 .HasForeignKey(b => b.CustomerId);
-           
+
+            // Booking => Employee (Many-to-One)
             modelBuilder.Entity<Booking>()
                 .HasOne(b => b.Employee)
                 .WithMany(c => c.Bookings)
                 .HasForeignKey(e => e.EmployeeId);
 
+            // Booking => Service (Many-to-One)
             modelBuilder.Entity<Booking>()
-                .HasOne(b => b.Service)
+                .HasMany(b => b.Services)
                 .WithMany(c => c.Bookings)
-                .HasForeignKey(e => e.ServiceId);
+                .UsingEntity(s => s.ToTable("BookingServices"));
 
+            // Employee => Service (Many-to-Many)
             modelBuilder.Entity<Employee>()
-            .HasMany(e => e.Services)
-            .WithMany(s => s.Employees)
-            .UsingEntity(s => s.ToTable("EmployeeServices"));
+                .HasMany(e => e.Services)
+                .WithMany(s => s.Employees)
+                .UsingEntity(s => s.ToTable("EmployeeServices"));
 
         }
     }
