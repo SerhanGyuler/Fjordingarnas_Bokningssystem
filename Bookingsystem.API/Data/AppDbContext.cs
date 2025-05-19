@@ -27,7 +27,7 @@ namespace BookingSystem.API.Data
                 .WithMany(c => c.Bookings)
                 .HasForeignKey(e => e.EmployeeId);
 
-            // Booking => Service (Many-to-One)
+            // Booking => Service (Many-to-Many)
             modelBuilder.Entity<Booking>()
                 .HasMany(b => b.Services)
                 .WithMany(c => c.Bookings)
