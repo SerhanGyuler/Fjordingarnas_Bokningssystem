@@ -1,4 +1,7 @@
 
+using BookingSystem.API.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace Bookingsystem.API
 {
     public class Program
