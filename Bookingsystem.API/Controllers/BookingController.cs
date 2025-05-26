@@ -1,6 +1,122 @@
-﻿namespace BookingSystem.API.Controllers
+﻿using BookingSystem.API.Data;
+using BookingSystem.API.Models;
+using Fjordingarnas_Bokningssystem.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace BookingSystem.API.Controllers
 {
-    public class BookingController
+    [Route("api/[controller]")]
+    [ApiController]
+    public class BookingController : ControllerBase
     {
+        private readonly AppDbContext _context;
+
+        public BookingController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET all bookings
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings()
+        {
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Employee)
+                .Include(b => b.Services)
+                .ToListAsync();
+
+            var bookingDtos = bookings.Select(b => new BookingDto
+            {
+                Id = b.Id,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                IsCancelled = b.IsCancelled,
+                CustomerName = b.Customer != null ? $"{b.Customer.FirstName} {b.Customer.LastName}" : "Unknown Customer",
+                EmployeeName = b.Employee != null ? $"{b.Employee.FirstName} {b.Employee.LastName}" : "Unknown Employee",
+                Services = [.. b.Services.Select(s => s.ServiceName)]
+            });
+
+            return Ok(bookingDtos);
+        }
+
+        // GET booking by Id
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BookingDto>> GetBookingById(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Employee)
+                .Include(b => b.Services)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null)
+            {
+                return NotFound($"Booking with ID {id} not found.");
+            }
+
+            var bookingDto = new BookingDto
+            {
+                Id = booking.Id,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                IsCancelled = booking.IsCancelled,
+                CustomerName = booking.Customer != null ? $"{booking.Customer.FirstName} {booking.Customer.LastName}" : "Unknown Customer",
+                EmployeeName = booking.Employee != null ? $"{booking.Employee.FirstName} {booking.Employee.LastName}" : "Unknown Employee",
+                Services = [.. booking.Services.Select(s => s.ServiceName)]
+            };
+
+            return Ok(bookingDto);
+        }
+
+
+        // POST (Create Booking)
+        [HttpPost]
+        public async Task<ActionResult<Booking>> CreateBooking([FromBody] BookingInputDto bookingDto)
+        {
+            // Hämta kopplingar från databasen
+            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
+            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
+            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+
+            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+                return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
+
+            var newBooking = new Booking
+            {
+                StartTime = bookingDto.StartTime,
+                EndTime = bookingDto.EndTime,
+                IsCancelled = false,
+                CustomerId = bookingDto.CustomerId,
+                EmployeeId = bookingDto.EmployeeId,
+                Services = services
+            };
+
+            _context.Bookings.Add(newBooking);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetBookingById), new { id = newBooking.Id }, newBooking);
+        }
+
+        // DELETE booking by Id
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBooking(int id)
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null)
+                return NotFound($"Booking with ID {id} not found.");
+
+            _context.Bookings.Remove(booking);
+            await _context.SaveChangesAsync();
+
+            return Ok($"Booking with ID {id} has been deleted.");
+        }
+
+        // PUT update booking
+
+
+        // PATCH cancel booking by Id
+
     }
 }
