@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Fjordingarnas_Bokningssystem.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,3 +21,6 @@ namespace Fjordingarnas_Bokningssystem.Models
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }
+
+
+
