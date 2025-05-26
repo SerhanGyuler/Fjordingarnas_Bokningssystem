@@ -19,7 +19,7 @@ namespace BookingSystem.API.Controllers
 
         // GET all bookings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings()
+        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings() 
         {
             var bookings = await _context.Bookings
                 .Include(b => b.Customer)
