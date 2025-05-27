@@ -1,4 +1,5 @@
 ﻿using BookingSystem.API.Data;
+using BookingSystem.API.Repositories;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +11,11 @@ namespace BookingSystem.API.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ICustomerRepository _customerRepository;
 
-        public CustomerController(AppDbContext context)
+        public CustomerController(ICustomerRepository customerRepository)
         {
-            _context = context;
+            _customerRepository = customerRepository;
         }
 
         // GET all customers
