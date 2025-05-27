@@ -52,5 +52,9 @@ namespace BookingSystem.API.Repositories
         {
             _context.Customers.Remove(customer);
         }
+        public async Task<bool> SaveChangesAsync()
+        {
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }
