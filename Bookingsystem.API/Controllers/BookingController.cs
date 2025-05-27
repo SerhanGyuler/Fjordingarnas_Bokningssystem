@@ -114,10 +114,73 @@ namespace BookingSystem.API.Controllers
             return Ok($"Booking with ID {id} has been deleted.");
         }
 
-        // PUT update booking
+        // PUT update booking      
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBooking(int id, [FromBody] BookingInputDto bookingDto)
+        {
+            var existingBooking = await _context.Bookings
+                .Include(b => b.Services)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (existingBooking == null)
+                return NotFound($"Booking with ID {id} not found.");
+
+            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
+            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
+            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+
+            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+                return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
+
+            // Uppdatera fält
+            existingBooking.StartTime = bookingDto.StartTime;
+            existingBooking.EndTime = bookingDto.EndTime;
+            existingBooking.CustomerId = bookingDto.CustomerId;
+            existingBooking.EmployeeId = bookingDto.EmployeeId;
+            existingBooking.Services = services;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(existingBooking);
+        }
 
 
         // PATCH cancel booking by Id
+        [HttpPatch("cancel/{id}")]
+        public async Task<IActionResult> CancelBooking(int id)
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null)
+                return NotFound($"Booking with ID {id} not found.");
+
+            booking.IsCancelled = true;
+            await _context.SaveChangesAsync();
+
+            return Ok($"Booking with ID {id} has been cancelled.");
+        }
+
+        // PATCH update booking status by Id
+        [HttpPatch("reschedule/{id}")]
+        public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingDto dto)
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null)
+            {
+                return NotFound($"Booking with ID {id} not found.");
+            }
+
+            if (booking.IsCancelled)
+            {
+                return BadRequest("Cannot reschedule a cancelled booking.");
+            }
+
+            booking.StartTime = dto.NewStartTime;
+            booking.EndTime = dto.NewEndTime;
+
+            await _context.SaveChangesAsync();
+
+            return Ok($"Booking with ID {id} has been rescheduled.");
+        }
 
 
         [HttpGet("AvailableBookingSpots")]
