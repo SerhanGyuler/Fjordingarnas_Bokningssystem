@@ -22,22 +22,9 @@ namespace BookingSystem.API.Controllers
         [HttpGet]
         public async Task<ActionResult<ICollection<Customer>>> GetAllCustomers()
         {
-            var customer = await _context.Customers
-                .Select(c => new
-                {
-                    c.Id,
-                    c.FirstName,
-                    c.LastName,
-                    c.PhoneNumber,
-                })
-                .ToListAsync();
-
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(customer);
+            var customers = await _customerRepository.GetAllCustomersAsync();
+            var result = customers.Select(c => new { c.Id, c.FirstName, c.LastName, c.PhoneNumber }).ToList();
+            return Ok(result);
         }
 
 
@@ -45,11 +32,11 @@ namespace BookingSystem.API.Controllers
         [HttpGet("id/{id}")]
         public async Task<ActionResult<Customer>> GetCustomerViaId(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
 
             if (customer == null)
             {
-                return NotFound($"Customer with ID '{id}' does not exist.");
+                return NotFound($"Customer with ID '{id}' not found.");
             }
 
             return Ok(customer);
@@ -59,11 +46,11 @@ namespace BookingSystem.API.Controllers
         [HttpGet("firstname/{FirstName}")]
         public async Task<ActionResult<Customer>> GetCustomerViaFirstName(string FirstName)
         {
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.FirstName == FirstName);
+            var customer = await _customerRepository.GetCustomerByFirstNameAsync(FirstName);
 
             if (customer == null)
             {
-                return NotFound($"Customer with FirstName '{FirstName}' does not exist.");
+                return NotFound($"Customer with FirstName '{FirstName}' not found.");
             }
 
             return Ok(customer);
@@ -73,11 +60,11 @@ namespace BookingSystem.API.Controllers
         [HttpGet("lastname/{LastName}")]
         public async Task<ActionResult<Customer>> GetCustomerViaLastName(string LastName)
         {
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.LastName == LastName);
+            var customer = await _customerRepository.GetCustomerByLastNameAsync(LastName);
 
             if (customer == null)
             {
-                return NotFound($"Customer with LastName '{LastName}' does not exist.");
+                return NotFound($"Customer with LastName '{LastName}' not found.");
             }
 
             return Ok(customer);
@@ -87,11 +74,11 @@ namespace BookingSystem.API.Controllers
         [HttpGet("phonenumber/{PhoneNumber}")]
         public async Task<ActionResult<Customer>> GetCustomerViaPhoneNumber(string PhoneNumber)
         {
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == PhoneNumber);
+            var customer = await _customerRepository.GetCustomerByPhoneNumberAsync(PhoneNumber);
 
             if (customer == null)
             {
-                return NotFound($"Customer with PhoneNumber '{PhoneNumber}' does not exist.");
+                return NotFound($"Customer with PhoneNumber '{PhoneNumber}' not found.");
             }
 
             return Ok(customer);
@@ -101,16 +88,10 @@ namespace BookingSystem.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
         {
-            var customer =_context.Customers.Add(new Customer
-            {
-                Id = id,
-                FirstName = firstName,
-                LastName = lastName,
-                PhoneNumber = phoneNumber
-            });
-
-            await _context.SaveChangesAsync();
-            return Ok();
+            var customer = new Customer { Id = id, FirstName = firstName, LastName = lastName, PhoneNumber = phoneNumber };
+            await _customerRepository.AddCustomerAsync(customer);
+            await _customerRepository.SaveChangesAsync();
+            return Ok($"Customer {customer.FirstName} {customer.LastName} was created created.");
         }
 
         // PUT update an existing customer
@@ -122,26 +103,19 @@ namespace BookingSystem.API.Controllers
                 return BadRequest("Customer ID mismatch.");
             }
 
-            var existingCustomer = await _context.Customers.FindAsync(id);
+            var existingCustomer = await _customerRepository.GetCustomerByIdAsync(id);
 
             if (existingCustomer == null)
             {
                 return NotFound($"Customer with ID {id} not found.");
             }
 
-            // Update fields
             existingCustomer.FirstName = updatedCustomer.FirstName;
             existingCustomer.LastName = updatedCustomer.LastName;
             existingCustomer.PhoneNumber = updatedCustomer.PhoneNumber;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            await _customerRepository.UpdateCustomerAsync(existingCustomer);
+            await _customerRepository.SaveChangesAsync();
             return Ok(existingCustomer);
         }
 
@@ -149,16 +123,15 @@ namespace BookingSystem.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id, string FirstName, string LastName)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
 
             if (customer == null)
             {
                 return NotFound($"Customer with ID {id} not found.");
             }
 
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
-
+            await _customerRepository.DeleteCustomerAsync(customer);
+            await _customerRepository.SaveChangesAsync();
             return Ok($"Customer with ID {id} has been deleted.");
         }
 
