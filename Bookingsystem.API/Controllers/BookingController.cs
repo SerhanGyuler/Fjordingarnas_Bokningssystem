@@ -182,5 +182,14 @@ namespace BookingSystem.API.Controllers
             }
             return Ok(availableSpots);
         }
+        [HttpGet("BookingsOverview")]
+        public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
+        {
+
+
+
+
+            return Ok();
+        }
     }
     }
