@@ -250,10 +250,12 @@ namespace BookingSystem.API.Controllers
         [HttpGet("bookings/overview")]
         public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
         {
-            var now = DateTime.Now;
-            var startDateWeek = now.AddDays(-(int)now.DayOfWeek);
+            var now = DateTime.UtcNow;
+
+            var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
             var endDateWeek = startDateWeek.AddDays(7);
-            var startDateMonth = new DateTime(now.Year, now.Month, 1);
+
+            var startDateMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDateMonth = startDateMonth.AddMonths(1);
 
             DateTime startDate, endDate;
@@ -273,11 +275,32 @@ namespace BookingSystem.API.Controllers
                 .Include(b => b.Services)
                 .Include(b => b.Customer)
                 .Include(b => b.Employee)
-                .Where(b => b.StartTime >=  startDate && b.StartTime < endDate)
+                .Where(b => b.StartTime >= startDate && b.StartTime < endDate && !b.IsCancelled)
                 .ToListAsync();
 
+            var bookingsGrouped = bookings
+                .Select(b => new BookingOverviewDto
+                {
+                    Date = b.StartTime.Date,
+                    StartTime = b.StartTime.ToString("HH:mm"),
+                    EndTime = b.EndTime.ToString("HH:mm"),
+                    Services = b.Services.Select(s => s.ServiceName!).ToArray(),
+                    Employee = b.Employee!.FirstName + " " + b.Employee.LastName,
+                    Customer = b.Customer!.FirstName + " " + b.Customer.LastName,
+                })
+                .GroupBy(b => b.Date)
+                .ToDictionary(
+                    g => g.Key.ToString("yyyy-MM-dd"),
+                    g => g.ToList()
+                );
 
-            return Ok();
+            return Ok(new
+            {
+                Range = range.ToLower(),
+                StartDate = startDate.ToString("yyyy-MM-dd"),
+                EndDate = endDate.ToString("yyyy-MM-dd"),
+                Bookings = bookingsGrouped
+            });
         }
     }
-    }
+}
