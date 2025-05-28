@@ -1,6 +1,7 @@
 using BookingSystem.API.Data;
 using BookingSystem.API.Models;
 using BookingSystem.API.Models.DTOs;
+using BookingSystem.API.Repositories;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,24 +12,35 @@ namespace BookingSystem.API.Controllers
     [ApiController]
     public class BookingController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IBookingRepository _bookingRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IServiceRepository _serviceRepository;
 
-        public BookingController(AppDbContext context)
+        public BookingController(
+            IBookingRepository bookingRepository,
+            ICustomerRepository customerRepository,
+            IEmployeeRepository employeeRepository,
+            IServiceRepository serviceRepository)
         {
-            _context = context;
+            _bookingRepository = bookingRepository;
+            _customerRepository = customerRepository;
+            _employeeRepository = employeeRepository;
+            _serviceRepository = serviceRepository;
         }
 
         // GET all bookings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings() 
+        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings()
         {
-            var bookings = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Employee)
-                .Include(b => b.Services)
-                .ToListAsync();
+            var booking = await _bookingRepository.GetAllAsync();
 
-            var bookingDtos = bookings.Select(b => new BookingDto
+            if (booking == null)
+            {
+                return NotFound("No bookings found.");
+            }
+
+            var bookingDtos = booking.Select(b => new BookingDto
             {
                 Id = b.Id,
                 StartTime = b.StartTime,
@@ -46,11 +58,7 @@ namespace BookingSystem.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BookingDto>> GetBookingById(int id)
         {
-            var booking = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Employee)
-                .Include(b => b.Services)
-                .FirstOrDefaultAsync(b => b.Id == id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
 
             if (booking == null)
             {
@@ -76,41 +84,27 @@ namespace BookingSystem.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Booking>> CreateBooking([FromBody] BookingInputDto bookingDto)
         {
-            // Hämta kopplingar från databasen
-            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
-            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
-            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+            var newBooking = await _bookingRepository.CreateBookingAsync(bookingDto);
 
-            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+            if (newBooking == null)
                 return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
 
-            var newBooking = new Booking
-            {
-                StartTime = bookingDto.StartTime,
-                EndTime = bookingDto.EndTime,
-                IsCancelled = false,
-                CustomerId = bookingDto.CustomerId,
-                EmployeeId = bookingDto.EmployeeId,
-                Services = services
-            };
-
-            _context.Bookings.Add(newBooking);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetBookingById), new { id = newBooking.Id }, newBooking);
+            return Ok(newBooking);
         }
 
         // DELETE booking by Id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
+
             if (booking == null)
+            {
                 return NotFound($"Booking with ID {id} not found.");
+            }
 
-            _context.Bookings.Remove(booking);
-            await _context.SaveChangesAsync();
-
+            await _bookingRepository.DeleteAsync(booking);
+            await _bookingRepository.SaveChangesAsync();
             return Ok($"Booking with ID {id} has been deleted.");
         }
 
@@ -118,43 +112,52 @@ namespace BookingSystem.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBooking(int id, [FromBody] BookingInputDto bookingDto)
         {
-            var existingBooking = await _context.Bookings
-                .Include(b => b.Services)
-                .FirstOrDefaultAsync(b => b.Id == id);
+            var existingBooking = await _bookingRepository.GetByIdWithServicesAsync(id);
 
             if (existingBooking == null)
                 return NotFound($"Booking with ID {id} not found.");
 
-            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
-            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
-            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+            var customer = await _customerRepository.GetCustomerByIdAsync(bookingDto.CustomerId);
+            var employee = await _employeeRepository.GetByIdAsync(bookingDto.EmployeeId);
+            var services = await _serviceRepository.GetByIdsAsync(bookingDto.ServiceIds);
 
-            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+            if (customer == null || employee == null || services.Count() != bookingDto.ServiceIds.Count)
+            {
                 return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
+            }
 
-            // Uppdatera fält
+            // Update fields
             existingBooking.StartTime = bookingDto.StartTime;
             existingBooking.EndTime = bookingDto.EndTime;
             existingBooking.CustomerId = bookingDto.CustomerId;
             existingBooking.EmployeeId = bookingDto.EmployeeId;
-            existingBooking.Services = services;
+            existingBooking.Services = services.ToList();
 
-            await _context.SaveChangesAsync();
+            await _bookingRepository.UpdateAsync(existingBooking);
+            var result = await _bookingRepository.SaveChangesAsync();
+
+            if (result == false)
+            {
+                return StatusCode(500, "Failed to update booking");
+            }
 
             return Ok(existingBooking);
         }
-
 
         // PATCH cancel booking by Id
         [HttpPatch("cancel/{id}")]
         public async Task<IActionResult> CancelBooking(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
+
             if (booking == null)
+            {
                 return NotFound($"Booking with ID {id} not found.");
 
+            }
+
             booking.IsCancelled = true;
-            await _context.SaveChangesAsync();
+            await _bookingRepository.SaveChangesAsync();
 
             return Ok($"Booking with ID {id} has been cancelled.");
         }
@@ -163,7 +166,7 @@ namespace BookingSystem.API.Controllers
         [HttpPatch("reschedule/{id}")]
         public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingDto dto)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
             if (booking == null)
             {
                 return NotFound($"Booking with ID {id} not found.");
@@ -177,11 +180,10 @@ namespace BookingSystem.API.Controllers
             booking.StartTime = dto.NewStartTime;
             booking.EndTime = dto.NewEndTime;
 
-            await _context.SaveChangesAsync();
+            await _bookingRepository.SaveChangesAsync();
 
             return Ok($"Booking with ID {id} has been rescheduled.");
         }
-
 
         [HttpGet("AvailableBookingSpots")]
         public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
