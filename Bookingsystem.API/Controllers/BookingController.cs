@@ -185,94 +185,124 @@ namespace BookingSystem.API.Controllers
             return Ok($"Booking with ID {id} has been rescheduled.");
         }
 
+        [HttpGet("AvailableBookingSpots")]
+        public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
+        {
+            // get the chosen service
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null)
+            {
+                return NotFound("Denna tjänsten hittades inte.");
+            }
 
-        //[HttpGet("AvailableBookingSpots")]
-        //public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
-        //{
-        //    // get the chosen service
-        //    var service = await _context.Services.FindAsync(serviceId);
-        //    if (service == null)
-        //    {
-        //        return NotFound("Denna tjänsten hittades inte.");
-        //    }
+            // Get the chosen employee & bookings & services
+            var employee = await _context.Employees
+                .Include(e => e.Bookings)
+                .Include(e => e.Services)
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
 
-        //    // Get the chosen employee & bookings & services
-        //    var employee = await _context.Employees
-        //        .Include(e => e.Bookings)
-        //        .Include(e => e.Services)
-        //        .FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null)
+            {
+                return NotFound("Frisören hittades inte.");
+            }
+            // Controll that the chosen barber has chosen service
+            if (!employee.Services.Any(s => s.Id == serviceId))
+            {
+                return BadRequest("Vald frisör erbjuder inte denna tjänsten.");
+            }
 
-        //    if (employee == null)
-        //    {
-        //        return NotFound("Frisören hittades inte.");
-        //    }
-        //    // Controll that the chosen barber has chosen service
-        //    if (!employee.Services.Any(s => s.Id == serviceId))
-        //    {
-        //        return BadRequest("Vald frisör erbjuder inte denna tjänsten.");
-        //    }
+            var availableSpots = new List<AvailableTimeSpotDto>();
+            var today = DateTime.Today;
 
-        //    var availableSpots = new List<AvailableTimeSpotDto>();
-        //    var today = DateTime.Today;
+            // Check timespots 30 days ahead
+            for (int daysAhead = 1; daysAhead <= 30; daysAhead++)
+            {
+                var date = today.AddDays(daysAhead);
 
-        //    // Check timespots 30 days ahead
-        //    for (int daysAhead = 1; daysAhead <= 30; daysAhead++)
-        //    {
-        //        var date = today.AddDays(daysAhead);
+                // Check for available spots every 30 minutes from 09:00 - 16:00
+                for (var time = new TimeSpan(9, 0, 0); time + service.Duration <= new TimeSpan(16, 0, 0); time += TimeSpan.FromMinutes(30))
+                {
+                    var startDateTime = date.Add(time);
+                    var endDateTime = startDateTime.Add(service.Duration);
 
-        //        // Check for available spots every 30 minutes from 09:00 - 16:00
-        //        for (var time = new TimeSpan(9, 0, 0); time + service.Duration <= new TimeSpan(16, 0, 0); time += TimeSpan.FromMinutes(30))
-        //        {
-        //            var startDateTime = date.Add(time);
-        //            var endDateTime = startDateTime.Add(service.Duration);
+                    // Check if time already is occupied
+                    var isOccupied = employee.Bookings
+                        .Any(b => !b.IsCancelled &&
+                        b.StartTime < endDateTime &&
+                        b.EndTime > startDateTime);
 
-        //            // Check if time already is occupied
-        //            var isOccupied = employee.Bookings
-        //                .Any(b => !b.IsCancelled &&
-        //                b.StartTime < endDateTime &&
-        //                b.EndTime > startDateTime);
+                    // add as available time
+                    if (!isOccupied)
+                    {
 
-        //            // add as available time
-        //            if (!isOccupied)
-        //            {
+                        availableSpots.Add(new AvailableTimeSpotDto
+                        {
+                            EmployeeId = employee.Id,
+                            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                            StartTime = startDateTime,
+                            EndTime = endDateTime
+                        });
+                    }
+                }
+            }
+            return Ok(availableSpots);
+        }
 
-        //                availableSpots.Add(new AvailableTimeSpotDto
-        //                {
-        //                    EmployeeId = employee.Id,
-        //                    EmployeeName = $"{employee.FirstName} {employee.LastName}",
-        //                    StartTime = startDateTime,
-        //                    EndTime = endDateTime
-        //                });
-        //            }
-        //        }
-        //    }
-        //    return Ok(availableSpots);
-        //}
+        //GET Overview of bookings by week or month
+        [HttpGet("bookings/overview")]
+        public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
+        {
+            var now = DateTime.UtcNow;
 
-        ////GET Overview of bookings by week or month
-        //[HttpGet("bookings/overview")]
-        //public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
-        //{
-        //    var now = DateTime.Now;
-        //    var startDateWeek = now.AddDays(-(int)now.DayOfWeek);
-        //    var endDateWeek = startDateWeek.AddDays(7);
-        //    var startDateMonth = new DateTime(now.Year, now.Month, 1);
-        //    var endDateMonth = startDateMonth.AddMonths(1);
+            var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
+            var endDateWeek = startDateWeek.AddDays(7);
 
-        //    DateTime startDate, endDate;
+            var startDateMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDateMonth = startDateMonth.AddMonths(1);
 
-        //    if (range.ToLower() == "month")
-        //    {
-        //        startDate = startDateMonth;
-        //        endDate = endDateMonth;
-        //    }
-        //    else
-        //    {
-        //        startDate = startDateWeek;
-        //        endDate = endDateWeek;
-        //    }
+            DateTime startDate, endDate;
 
-        //    return Ok();
-        //}
+            if (range.ToLower() == "month")
+            {
+                startDate = startDateMonth;
+                endDate = endDateMonth;
+            }
+            else
+            {
+                startDate = startDateWeek;
+                endDate = endDateWeek;
+            }
+
+            var bookings = await _context.Bookings
+                .Include(b => b.Services)
+                .Include(b => b.Customer)
+                .Include(b => b.Employee)
+                .Where(b => b.StartTime >= startDate && b.StartTime < endDate && !b.IsCancelled)
+                .ToListAsync();
+
+            var bookingsGrouped = bookings
+                .Select(b => new BookingOverviewDto
+                {
+                    Date = b.StartTime.Date,
+                    StartTime = b.StartTime.ToString("HH:mm"),
+                    EndTime = b.EndTime.ToString("HH:mm"),
+                    Services = b.Services.Select(s => s.ServiceName!).ToArray(),
+                    Employee = b.Employee!.FirstName + " " + b.Employee.LastName,
+                    Customer = b.Customer!.FirstName + " " + b.Customer.LastName,
+                })
+                .GroupBy(b => b.Date)
+                .ToDictionary(
+                    g => g.Key.ToString("yyyy-MM-dd"),
+                    g => g.ToList()
+                );
+
+            return Ok(new
+            {
+                Range = range.ToLower(),
+                StartDate = startDate.ToString("yyyy-MM-dd"),
+                EndDate = endDate.ToString("yyyy-MM-dd"),
+                Bookings = bookingsGrouped
+            });
+        }
     }
 }
