@@ -1,6 +1,7 @@
 using BookingSystem.API.Data;
 using BookingSystem.API.Models;
 using BookingSystem.API.Models.DTOs;
+using BookingSystem.API.Repositories;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,24 +12,35 @@ namespace BookingSystem.API.Controllers
     [ApiController]
     public class BookingController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IBookingRepository _bookingRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IServiceRepository _serviceRepository;
 
-        public BookingController(AppDbContext context)
+        public BookingController(
+            IBookingRepository bookingRepository,
+            ICustomerRepository customerRepository,
+            IEmployeeRepository employeeRepository,
+            IServiceRepository serviceRepository)
         {
-            _context = context;
+            _bookingRepository = bookingRepository;
+            _customerRepository = customerRepository;
+            _employeeRepository = employeeRepository;
+            _serviceRepository = serviceRepository;
         }
 
         // GET all bookings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings() 
+        public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings()
         {
-            var bookings = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Employee)
-                .Include(b => b.Services)
-                .ToListAsync();
+            var booking = await _bookingRepository.GetAllAsync();
 
-            var bookingDtos = bookings.Select(b => new BookingDto
+            if (booking == null)
+            {
+                return NotFound("No bookings found.");
+            }
+
+            var bookingDtos = booking.Select(b => new BookingDto
             {
                 Id = b.Id,
                 StartTime = b.StartTime,
@@ -46,11 +58,7 @@ namespace BookingSystem.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BookingDto>> GetBookingById(int id)
         {
-            var booking = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Employee)
-                .Include(b => b.Services)
-                .FirstOrDefaultAsync(b => b.Id == id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
 
             if (booking == null)
             {
@@ -76,41 +84,27 @@ namespace BookingSystem.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Booking>> CreateBooking([FromBody] BookingInputDto bookingDto)
         {
-            // Hämta kopplingar från databasen
-            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
-            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
-            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+            var newBooking = await _bookingRepository.CreateBookingAsync(bookingDto);
 
-            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+            if (newBooking == null)
                 return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
 
-            var newBooking = new Booking
-            {
-                StartTime = bookingDto.StartTime,
-                EndTime = bookingDto.EndTime,
-                IsCancelled = false,
-                CustomerId = bookingDto.CustomerId,
-                EmployeeId = bookingDto.EmployeeId,
-                Services = services
-            };
-
-            _context.Bookings.Add(newBooking);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetBookingById), new { id = newBooking.Id }, newBooking);
+            return Ok(newBooking);
         }
 
         // DELETE booking by Id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
+
             if (booking == null)
+            {
                 return NotFound($"Booking with ID {id} not found.");
+            }
 
-            _context.Bookings.Remove(booking);
-            await _context.SaveChangesAsync();
-
+            await _bookingRepository.DeleteAsync(booking);
+            await _bookingRepository.SaveChangesAsync();
             return Ok($"Booking with ID {id} has been deleted.");
         }
 
@@ -118,43 +112,52 @@ namespace BookingSystem.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBooking(int id, [FromBody] BookingInputDto bookingDto)
         {
-            var existingBooking = await _context.Bookings
-                .Include(b => b.Services)
-                .FirstOrDefaultAsync(b => b.Id == id);
+            var existingBooking = await _bookingRepository.GetByIdWithServicesAsync(id);
 
             if (existingBooking == null)
                 return NotFound($"Booking with ID {id} not found.");
 
-            var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
-            var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
-            var services = await _context.Services.Where(s => bookingDto.ServiceIds.Contains(s.Id)).ToListAsync();
+            var customer = await _customerRepository.GetCustomerByIdAsync(bookingDto.CustomerId);
+            var employee = await _employeeRepository.GetByIdAsync(bookingDto.EmployeeId);
+            var services = await _serviceRepository.GetByIdsAsync(bookingDto.ServiceIds);
 
-            if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+            if (customer == null || employee == null || services.Count() != bookingDto.ServiceIds.Count)
+            {
                 return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
+            }
 
-            // Uppdatera fält
+            // Update fields
             existingBooking.StartTime = bookingDto.StartTime;
             existingBooking.EndTime = bookingDto.EndTime;
             existingBooking.CustomerId = bookingDto.CustomerId;
             existingBooking.EmployeeId = bookingDto.EmployeeId;
-            existingBooking.Services = services;
+            existingBooking.Services = services.ToList();
 
-            await _context.SaveChangesAsync();
+            await _bookingRepository.UpdateAsync(existingBooking);
+            var result = await _bookingRepository.SaveChangesAsync();
+
+            if (result == false)
+            {
+                return StatusCode(500, "Failed to update booking");
+            }
 
             return Ok(existingBooking);
         }
-
 
         // PATCH cancel booking by Id
         [HttpPatch("cancel/{id}")]
         public async Task<IActionResult> CancelBooking(int id)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
+
             if (booking == null)
+            {
                 return NotFound($"Booking with ID {id} not found.");
 
+            }
+
             booking.IsCancelled = true;
-            await _context.SaveChangesAsync();
+            await _bookingRepository.SaveChangesAsync();
 
             return Ok($"Booking with ID {id} has been cancelled.");
         }
@@ -163,7 +166,7 @@ namespace BookingSystem.API.Controllers
         [HttpPatch("reschedule/{id}")]
         public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingDto dto)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _bookingRepository.GetByIdAsync(id);
             if (booking == null)
             {
                 return NotFound($"Booking with ID {id} not found.");
@@ -177,99 +180,99 @@ namespace BookingSystem.API.Controllers
             booking.StartTime = dto.NewStartTime;
             booking.EndTime = dto.NewEndTime;
 
-            await _context.SaveChangesAsync();
+            await _bookingRepository.SaveChangesAsync();
 
             return Ok($"Booking with ID {id} has been rescheduled.");
         }
 
 
-        [HttpGet("AvailableBookingSpots")]
-        public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
-        {
-            // get the chosen service
-            var service = await _context.Services.FindAsync(serviceId);
-            if (service == null)
-            {
-                return NotFound("Denna tjänsten hittades inte.");
-            }
+        //[HttpGet("AvailableBookingSpots")]
+        //public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
+        //{
+        //    // get the chosen service
+        //    var service = await _context.Services.FindAsync(serviceId);
+        //    if (service == null)
+        //    {
+        //        return NotFound("Denna tjänsten hittades inte.");
+        //    }
 
-            // Get the chosen employee & bookings & services
-            var employee = await _context.Employees
-                .Include(e => e.Bookings)
-                .Include(e => e.Services)
-                .FirstOrDefaultAsync(e => e.Id == employeeId);
+        //    // Get the chosen employee & bookings & services
+        //    var employee = await _context.Employees
+        //        .Include(e => e.Bookings)
+        //        .Include(e => e.Services)
+        //        .FirstOrDefaultAsync(e => e.Id == employeeId);
 
-            if (employee == null)
-            {
-                return NotFound("Frisören hittades inte.");
-            }
-            // Controll that the chosen barber has chosen service
-            if (!employee.Services.Any(s => s.Id == serviceId))
-            {
-                return BadRequest("Vald frisör erbjuder inte denna tjänsten.");
-            }
+        //    if (employee == null)
+        //    {
+        //        return NotFound("Frisören hittades inte.");
+        //    }
+        //    // Controll that the chosen barber has chosen service
+        //    if (!employee.Services.Any(s => s.Id == serviceId))
+        //    {
+        //        return BadRequest("Vald frisör erbjuder inte denna tjänsten.");
+        //    }
 
-            var availableSpots = new List<AvailableTimeSpotDto>();
-            var today = DateTime.Today;
+        //    var availableSpots = new List<AvailableTimeSpotDto>();
+        //    var today = DateTime.Today;
 
-            // Check timespots 30 days ahead
-            for (int daysAhead = 1; daysAhead <= 30; daysAhead++)
-            {
-                var date = today.AddDays(daysAhead);
+        //    // Check timespots 30 days ahead
+        //    for (int daysAhead = 1; daysAhead <= 30; daysAhead++)
+        //    {
+        //        var date = today.AddDays(daysAhead);
 
-                // Check for available spots every 30 minutes from 09:00 - 16:00
-                for (var time = new TimeSpan(9, 0, 0); time + service.Duration <= new TimeSpan(16, 0, 0); time += TimeSpan.FromMinutes(30))
-                {
-                    var startDateTime = date.Add(time);
-                    var endDateTime = startDateTime.Add(service.Duration);
+        //        // Check for available spots every 30 minutes from 09:00 - 16:00
+        //        for (var time = new TimeSpan(9, 0, 0); time + service.Duration <= new TimeSpan(16, 0, 0); time += TimeSpan.FromMinutes(30))
+        //        {
+        //            var startDateTime = date.Add(time);
+        //            var endDateTime = startDateTime.Add(service.Duration);
 
-                    // Check if time already is occupied
-                    var isOccupied = employee.Bookings
-                        .Any(b => !b.IsCancelled &&
-                        b.StartTime < endDateTime &&
-                        b.EndTime > startDateTime);
+        //            // Check if time already is occupied
+        //            var isOccupied = employee.Bookings
+        //                .Any(b => !b.IsCancelled &&
+        //                b.StartTime < endDateTime &&
+        //                b.EndTime > startDateTime);
 
-                    // add as available time
-                    if (!isOccupied)
-                    {
+        //            // add as available time
+        //            if (!isOccupied)
+        //            {
 
-                        availableSpots.Add(new AvailableTimeSpotDto
-                        {
-                            EmployeeId = employee.Id,
-                            EmployeeName = $"{employee.FirstName} {employee.LastName}",
-                            StartTime = startDateTime,
-                            EndTime = endDateTime
-                        });
-                    }
-                }
-            }
-            return Ok(availableSpots);
-        }
+        //                availableSpots.Add(new AvailableTimeSpotDto
+        //                {
+        //                    EmployeeId = employee.Id,
+        //                    EmployeeName = $"{employee.FirstName} {employee.LastName}",
+        //                    StartTime = startDateTime,
+        //                    EndTime = endDateTime
+        //                });
+        //            }
+        //        }
+        //    }
+        //    return Ok(availableSpots);
+        //}
 
-        //GET Overview of bookings by week or month
-        [HttpGet("bookings/overview")]
-        public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
-        {
-            var now = DateTime.Now;
-            var startDateWeek = now.AddDays(-(int)now.DayOfWeek);
-            var endDateWeek = startDateWeek.AddDays(7);
-            var startDateMonth = new DateTime(now.Year, now.Month, 1);
-            var endDateMonth = startDateMonth.AddMonths(1);
+        ////GET Overview of bookings by week or month
+        //[HttpGet("bookings/overview")]
+        //public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
+        //{
+        //    var now = DateTime.Now;
+        //    var startDateWeek = now.AddDays(-(int)now.DayOfWeek);
+        //    var endDateWeek = startDateWeek.AddDays(7);
+        //    var startDateMonth = new DateTime(now.Year, now.Month, 1);
+        //    var endDateMonth = startDateMonth.AddMonths(1);
 
-            DateTime startDate, endDate;
+        //    DateTime startDate, endDate;
 
-            if (range.ToLower() == "month")
-            {
-                startDate = startDateMonth;
-                endDate = endDateMonth;
-            }
-            else
-            {
-                startDate = startDateWeek;
-                endDate = endDateWeek;
-            }
+        //    if (range.ToLower() == "month")
+        //    {
+        //        startDate = startDateMonth;
+        //        endDate = endDateMonth;
+        //    }
+        //    else
+        //    {
+        //        startDate = startDateWeek;
+        //        endDate = endDateWeek;
+        //    }
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
     }
-    }
+}

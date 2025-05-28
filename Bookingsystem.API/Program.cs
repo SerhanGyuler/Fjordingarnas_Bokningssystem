@@ -26,6 +26,9 @@ namespace Bookingsystem.API
             // Register the repositorys
             builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
             builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+            builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+            builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+
 
 
             builder.Services.AddEndpointsApiExplorer();

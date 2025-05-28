@@ -1,4 +1,5 @@
-﻿using Fjordingarnas_Bokningssystem.Models;
+﻿using BookingSystem.API.Models.DTOs;
+using Fjordingarnas_Bokningssystem.Models;
 
 namespace BookingSystem.API.Repositories
 {
@@ -9,5 +10,10 @@ namespace BookingSystem.API.Repositories
         public Task AddAsync(Booking booking);
         public Task DeleteAsync(Booking booking);
         public Task<bool> SaveChangesAsync();
+        public Task<Booking?> CreateBookingAsync(BookingInputDto bookingDto);
+        public Task<Booking?> GetByIdWithServicesAsync(int id);
+        public Task UpdateAsync(Booking booking);
+
+
     }
 }
