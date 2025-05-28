@@ -3,6 +3,7 @@ using BookingSystem.API.Models;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BookingSystem.API.Models.DTOs;
 
 namespace BookingSystem.API.Controllers
 {
@@ -181,5 +182,15 @@ namespace BookingSystem.API.Controllers
                 }
                 return Ok(availableSpots);
             }
+
+        [HttpGet("BookingsOverview")]
+        public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
+        {
+            
+            
+
+
+            return Ok();
+        }
         }
     }
