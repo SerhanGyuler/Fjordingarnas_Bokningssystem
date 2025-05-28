@@ -182,12 +182,27 @@ namespace BookingSystem.API.Controllers
             }
             return Ok(availableSpots);
         }
-        [HttpGet("BookingsOverview")]
+        [HttpGet("bookings/overview")]
         public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
         {
+            var now = DateTime.Now;
+            var startDateWeek = now.AddDays(-(int)now.DayOfWeek);
+            var endDateWeek = startDateWeek.AddDays(7);
+            var startDateMonth = new DateTime(now.Year, now.Month, 1);
+            var endDateMonth = startDateMonth.AddMonths(1);
 
+            DateTime startDate, endDate;
 
-
+            if (range.ToLower() == "month")
+            {
+                startDate = startDateMonth;
+                endDate = endDateMonth;
+            }
+            else
+            {
+                startDate = startDateWeek;
+                endDate = endDateWeek;
+            }
 
             return Ok();
         }
