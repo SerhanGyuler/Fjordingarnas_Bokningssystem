@@ -70,15 +70,17 @@ namespace BookingSystem.API.Repositories
                 .ToListAsync();
 
             if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
+            {
                 return null;
+            }
 
             var newBooking = new Booking
             {
                 StartTime = bookingDto.StartTime,
                 EndTime = bookingDto.EndTime,
                 IsCancelled = false,
-                CustomerId = bookingDto.CustomerId,
-                EmployeeId = bookingDto.EmployeeId,
+                Customer = customer,
+                Employee = employee,
                 Services = services
             };
 
