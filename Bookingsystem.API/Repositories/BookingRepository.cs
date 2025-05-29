@@ -87,5 +87,15 @@ namespace BookingSystem.API.Repositories
 
             return newBooking;
         }
+
+        public async Task<List<Booking>> GetBookingsInDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _context.Bookings
+                .Include(b => b.Services)
+                .Include(b => b.Customer)
+                .Include(b => b.Employee)
+                .Where(b => b.StartTime >= startDate && b.StartTime < endDate && !b.IsCancelled)
+                .ToListAsync();
+        }
     }
 }
