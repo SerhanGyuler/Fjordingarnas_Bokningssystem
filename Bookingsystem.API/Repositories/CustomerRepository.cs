@@ -43,14 +43,16 @@ namespace BookingSystem.API.Repositories
             await _context.Customers.AddAsync(customer);
         }
 
-        public async Task UpdateCustomerAsync(Customer customer)
+        public Task UpdateCustomerAsync(Customer customer)
         {
             _context.Customers.Update(customer);
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteCustomerAsync(Customer customer)
+        public Task DeleteCustomerAsync(Customer customer)
         {
             _context.Customers.Remove(customer);
+            return Task.CompletedTask;
         }
         public async Task<bool> SaveChangesAsync()
         {

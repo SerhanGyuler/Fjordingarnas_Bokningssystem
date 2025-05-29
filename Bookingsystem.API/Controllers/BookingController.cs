@@ -144,7 +144,9 @@ namespace BookingSystem.API.Controllers
             var existingBooking = await _bookingRepository.GetByIdWithServicesAsync(id);
 
             if (existingBooking == null)
+            {
                 return NotFound($"Booking with ID {id} not found.");
+            }
 
             var customer = await _customerRepository.GetCustomerByIdAsync(bookingDto.CustomerId);
             var employee = await _employeeRepository.GetByIdAsync(bookingDto.EmployeeId);
@@ -170,8 +172,20 @@ namespace BookingSystem.API.Controllers
                 return StatusCode(500, "Failed to update booking");
             }
 
-            return Ok(existingBooking);
+            var responseDto = new BookingDto
+            {
+                Id = existingBooking.Id,
+                StartTime = existingBooking.StartTime,
+                EndTime = existingBooking.EndTime,
+                IsCancelled = existingBooking.IsCancelled,
+                CustomerName = customer != null ? $"{customer.FirstName} {customer.LastName}" : "Unknown Customer",
+                EmployeeName = employee != null ? $"{employee.FirstName} {employee.LastName}" : "Unknown Employee",
+                Services = [.. services.Select(s => s.ServiceName)]
+            };
+
+            return Ok(responseDto);
         }
+
 
         // PATCH cancel booking by Id
         [HttpPatch("cancel/{id}")]
@@ -303,7 +317,7 @@ namespace BookingSystem.API.Controllers
             }
 
             var bookings = await _bookingRepository.GetBookingsInDateRangeAsync(startDate, endDate);
-                
+
 
             var bookingsGrouped = bookings
                 .Select(b => new BookingOverviewDto
