@@ -273,12 +273,8 @@ namespace BookingSystem.API.Controllers
                 endDate = endDateWeek;
             }
 
-            var bookings = await _context.Bookings
-                .Include(b => b.Services)
-                .Include(b => b.Customer)
-                .Include(b => b.Employee)
-                .Where(b => b.StartTime >= startDate && b.StartTime < endDate && !b.IsCancelled)
-                .ToListAsync();
+            var bookings = await _bookingRepository.GetBookingsInDateRangeAsync(startDate, endDate);
+                
 
             var bookingsGrouped = bookings
                 .Select(b => new BookingOverviewDto
