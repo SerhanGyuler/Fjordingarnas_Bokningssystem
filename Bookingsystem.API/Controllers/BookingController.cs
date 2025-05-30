@@ -343,5 +343,12 @@ namespace BookingSystem.API.Controllers
                 Bookings = bookingsGrouped
             });
         }
+
+        [HttpGet("calculate/price")]
+        public async Task<IActionResult> GetPriceOfBooking()
+        {
+
+            return Ok();
+        }
     }
 }
