@@ -19,5 +19,12 @@ namespace BookingSystem.API.Repositories
                 .Where(s => ids.Contains(s.Id))
                 .ToListAsync();
         }
+
+        public async Task<List<Service>> GetServicesByBookingIdAsync(int bookingId)
+        {
+            return await _context.Services
+                .Where(s => s.Bookings.Any(b => b.Id == bookingId))
+                .ToListAsync();
+        }
     }
 }
