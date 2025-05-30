@@ -345,10 +345,22 @@ namespace BookingSystem.API.Controllers
         }
 
         [HttpGet("calculate/price")]
-        public async Task<IActionResult> GetPriceOfBooking()
+        public async Task<IActionResult> GetPriceOfBooking(int id)
         {
+            var services = await _serviceRepository.GetServicesByBookingIdAsync(id);
 
-            return Ok();
+            var servicePrices = services
+                .Select(s => new BookingPriceDto
+                {
+                    ServiceName = s.ServiceName,
+                    Price = s.Price
+                });
+
+            return Ok(new
+            {
+                Prices = servicePrices,
+                Total = servicePrices.Sum(s => s.Price)
+            });
         }
     }
 }
