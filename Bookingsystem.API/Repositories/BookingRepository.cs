@@ -99,5 +99,21 @@ namespace BookingSystem.API.Repositories
                 .Where(b => b.StartTime >= startDate && b.StartTime < endDate && !b.IsCancelled)
                 .ToListAsync();
         }
+
+        public async Task<List<Booking>> GetBookingsForEmployeeAsync(int employeeId, DateTime? startDate, DateTime? endDate)
+        {
+            var query = _context.Bookings
+                .Include(b => b.Services)
+                .Include(b => b.Customer)
+                .Include(b => b.Employee)
+                .Where(b => b.EmployeeId == employeeId && !b.IsCancelled);
+
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                query = query.Where(b => b.StartTime >= startDate.Value && b.StartTime < endDate.Value);
+            }
+
+            return await query.OrderBy(b => b.StartTime).ToListAsync();
+        }
     }
 }
