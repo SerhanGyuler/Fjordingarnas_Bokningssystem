@@ -14,7 +14,6 @@ namespace BookingSystem.API.Repositories
         public Task<Booking?> GetByIdWithServicesAsync(int id);
         public Task UpdateAsync(Booking booking);
         public Task<List<Booking>> GetBookingsInDateRangeAsync(DateTime startDate, DateTime endDate);
-
-
+        public Task<List<Booking>> GetBookingsForEmployeeAsync(int employeeId, DateTime? startDate, DateTime? endDate);
     }
 }
