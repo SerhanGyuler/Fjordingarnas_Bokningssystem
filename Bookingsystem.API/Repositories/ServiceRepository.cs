@@ -26,5 +26,36 @@ namespace BookingSystem.API.Repositories
                 .Where(s => s.Bookings.Any(b => b.Id == bookingId))
                 .ToListAsync();
         }
+
+        public async Task<Service> AddAsync(Service service)
+        {
+            _context.Services.Add(service);
+            await _context.SaveChangesAsync();
+            return service;
+        }
+
+        public async Task<bool> DeleteServiceAsync(int id)
+        {
+            var service = await _context.Services.FindAsync(id);
+
+            if (service == null)
+                return false;
+
+            _context.Services.Remove(service);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<Service?> GetServiceByIdAsync(int id)
+        {
+            return await _context.Services.FindAsync(id);
+        }
+
+        public async Task<bool> UpdateServiceAsync(Service service)
+        {
+            _context.Services.Update(service);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
