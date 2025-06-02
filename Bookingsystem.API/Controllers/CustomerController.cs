@@ -1,4 +1,5 @@
 ﻿using BookingSystem.API.Data;
+using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Http;
@@ -96,27 +97,29 @@ namespace BookingSystem.API.Controllers
 
         // PUT update an existing customer
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updatedCustomer)
+        public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
         {
-            if (id != updatedCustomer.Id)
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+            if (customer == null)
             {
-                return BadRequest("Customer ID mismatch.");
+                return NotFound();
             }
 
-            var existingCustomer = await _customerRepository.GetCustomerByIdAsync(id);
+            customer.FirstName = customerDto.FirstName;
+            customer.LastName = customerDto.LastName;
+            customer.PhoneNumber = customerDto.PhoneNumber;
 
-            if (existingCustomer == null)
-            {
-                return NotFound($"Customer with ID {id} not found.");
-            }
-
-            existingCustomer.FirstName = updatedCustomer.FirstName;
-            existingCustomer.LastName = updatedCustomer.LastName;
-            existingCustomer.PhoneNumber = updatedCustomer.PhoneNumber;
-
-            await _customerRepository.UpdateCustomerAsync(existingCustomer);
+            await _customerRepository.UpdateCustomerAsync(customer);
             await _customerRepository.SaveChangesAsync();
-            return Ok(existingCustomer);
+
+            var updatedDto = new CustomerDto
+            {
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+
+            return Ok(updatedDto);
         }
 
         // DELETE customer by id
