@@ -124,7 +124,7 @@ namespace BookingSystem.API.Controllers
 
         // DELETE customer by id
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(int id, string FirstName, string LastName)
+        public async Task<IActionResult> DeleteCustomer(int id)
         {
             var customer = await _customerRepository.GetCustomerByIdAsync(id);
 
