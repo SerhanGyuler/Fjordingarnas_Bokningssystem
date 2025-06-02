@@ -5,14 +5,37 @@ using Microsoft.AspNetCore.Mvc;
 namespace BookingSystem.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller")]
+    [Route("api/[controller]")]
     public class EmployeeController : ControllerBase
     {
         private readonly IBookingRepository _bookingRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
-        public EmployeeController(IBookingRepository bookingRepository)
+        public EmployeeController(IBookingRepository bookingRepository, IEmployeeRepository employeeRepository)
         {
             _bookingRepository = bookingRepository;
+            _employeeRepository = employeeRepository;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<GetEmployeeDto>>> GetEmployees()
+        {
+            var employee = await _employeeRepository.GetAllAsync();
+
+            if (employee == null)
+            {
+                return NotFound("No bookings found.");
+            }
+
+            var employeeDtos = employee.Select(e => new GetEmployeeDto
+            {
+                Id = e.Id,
+                Name = e != null ? $"{e.FirstName} {e.LastName}" : "Unknown Employee",
+                PhoneNumber = e.PhoneNumber,
+                Services = e.Services.Select(s => s.ServiceName!).ToList(),
+            });
+
+            return Ok(employeeDtos);
         }
 
         [HttpGet("employee/{employeeId}")]
