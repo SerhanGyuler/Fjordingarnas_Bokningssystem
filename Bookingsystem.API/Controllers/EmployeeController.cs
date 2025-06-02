@@ -24,7 +24,7 @@ namespace BookingSystem.API.Controllers
 
             if (employee == null)
             {
-                return NotFound("No bookings found.");
+                return NotFound("No employees found.");
             }
 
             var employeeDtos = employee.Select(e => new GetEmployeeDto
@@ -36,6 +36,27 @@ namespace BookingSystem.API.Controllers
             });
 
             return Ok(employeeDtos);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<GetEmployeeDto>> GetEmployeeById(int id)
+        {
+            var employee = await _employeeRepository.GetByIdWithServicesAsync(id);
+
+            if (employee == null)
+            {
+                return NotFound($"Employee with ID {id} not found.");
+            }
+
+            var employeeDto = new GetEmployeeDto
+            {
+                Id = employee.Id,
+                Name = employee != null ? $"{employee.FirstName} {employee.LastName}" : "Unknown Employee",
+                PhoneNumber = employee.PhoneNumber,
+                Services = employee.Services.Select(s => s.ServiceName!).ToList(),
+            };
+
+            return Ok(employeeDto);
         }
 
         [HttpGet("employee/{employeeId}")]
