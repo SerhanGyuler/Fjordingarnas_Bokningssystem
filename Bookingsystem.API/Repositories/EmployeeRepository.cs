@@ -17,5 +17,12 @@ namespace BookingSystem.API.Repositories
         {
             return await _context.Employees.FindAsync(id);
         }
+
+        public async Task<IEnumerable<Employee>> GetAllAsync()
+        {
+            return await _context.Employees
+                .Include(b => b.Services)
+                .ToListAsync();
+        }
     }
 }
