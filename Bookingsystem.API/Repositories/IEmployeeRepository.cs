@@ -6,5 +6,6 @@ namespace BookingSystem.API.Repositories
     {
         public Task<Employee?> GetByIdAsync(int id);
         public Task<IEnumerable<Employee>> GetAllAsync();
+        public Task<Employee> GetByIdWithServicesAsync(int id);
     }
 }
