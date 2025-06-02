@@ -291,6 +291,8 @@ namespace BookingSystem.API.Controllers
         //    return Ok(availableSpots);
         //}
 
+
+        // WIP POSTMAN
         //GET Overview of bookings by week or month
         [HttpGet("bookings/overview")]
         public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
