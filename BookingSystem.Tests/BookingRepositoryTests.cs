@@ -10,8 +10,10 @@ using System.Threading.Tasks;
 using BookingSystem.API.Data;
 using BookingSystem.API.Repositories;
 
+
 namespace BookingSystem.Tests
 {
+    [TestClass]
     class BookingRepositoryTests
     {
         //1-6
