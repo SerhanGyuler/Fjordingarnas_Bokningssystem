@@ -41,9 +41,9 @@ namespace BookingSystem.Tests
 
             var booking = result.Single();
 
-            Assert.Equals("Douglas", booking.Customer.FirstName);
-            Assert.Equals("Hamtaro", booking.Employee.FirstName);
-            Assert.Equals("Shave", booking.Services.Single().ServiceName);
+            Assert.AreEqual("Douglas", booking.Customer.FirstName);
+            Assert.AreEqual("Hamtaro", booking.Employee.FirstName);
+            Assert.AreEqual("Shave", booking.Services.Single().ServiceName);
         }
 
 
