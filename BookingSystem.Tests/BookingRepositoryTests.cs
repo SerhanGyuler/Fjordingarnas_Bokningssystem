@@ -14,7 +14,7 @@ using BookingSystem.API.Repositories;
 namespace BookingSystem.Tests
 {
     [TestClass]
-    class BookingRepositoryTests
+    public class BookingRepositoryTests
     {
         //1-6
         [TestMethod]
