@@ -1,5 +1,6 @@
 ﻿using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookingSystem.API.Services
 {
@@ -29,6 +30,25 @@ namespace BookingSystem.API.Services
                 EmployeeName = b.Employee != null ? $"{b.Employee.FirstName} {b.Employee.LastName}" : "Unknown Employee",
                 Services = b.Services.Select(s => s.ServiceName).ToList()
             });
+        }
+
+        public async Task<BookingDto> GetBookingByIdAsync(int id)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(id);
+
+            if (booking == null)
+                return null;
+
+            return new BookingDto
+            {
+                Id = booking.Id,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                IsCancelled = booking.IsCancelled,
+                CustomerName = booking.Customer != null ? $"{booking.Customer.FirstName} {booking.Customer.LastName}" : "Unknown Customer",
+                EmployeeName = booking.Employee != null ? $"{booking.Employee.FirstName} {booking.Employee.LastName}" : "Unknown Employee",
+                Services = [.. booking.Services.Select(s => s.ServiceName)]
+            };
         }
     }
 }
