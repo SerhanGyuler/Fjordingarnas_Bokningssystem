@@ -2,6 +2,7 @@ using BookingSystem.API.Data;
 using BookingSystem.API.Models;
 using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
+using BookingSystem.API.Services;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,41 +17,31 @@ namespace BookingSystem.API.Controllers
         private readonly ICustomerRepository _customerRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IBookingService _bookingService;
 
         public BookingController(
             IBookingRepository bookingRepository,
             ICustomerRepository customerRepository,
             IEmployeeRepository employeeRepository,
-            IServiceRepository serviceRepository)
+            IServiceRepository serviceRepository,
+            IBookingService bookingService)
         {
             _bookingRepository = bookingRepository;
             _customerRepository = customerRepository;
             _employeeRepository = employeeRepository;
             _serviceRepository = serviceRepository;
+            _bookingService = bookingService;
         }
 
         // GET all bookings
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BookingDto>>> GetBookings()
         {
-            var booking = await _bookingRepository.GetAllAsync();
-
-            if (booking == null)
-            {
-                return NotFound("No bookings found.");
-            }
-
-            var bookingDtos = booking.Select(b => new BookingDto
-            {
-                Id = b.Id,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                IsCancelled = b.IsCancelled,
-                CustomerName = b.Customer != null ? $"{b.Customer.FirstName} {b.Customer.LastName}" : "Unknown Customer",
-                EmployeeName = b.Employee != null ? $"{b.Employee.FirstName} {b.Employee.LastName}" : "Unknown Employee",
-                Services = [.. b.Services.Select(s => s.ServiceName)]
-            });
-
+            var bookingDtos = await _bookingService.GetAllBookingDtosAsync();
+            
+            if (!bookingDtos.Any())
+                return NotFound("No bookings found");
+            
             return Ok(bookingDtos);
         }
 
@@ -346,7 +337,7 @@ namespace BookingSystem.API.Controllers
             });
         }
 
-        [HttpGet("calculate/price")]
+        [HttpGet("price")]
         public async Task<IActionResult> GetPriceOfBooking(int id)
         {
             var services = await _serviceRepository.GetServicesByBookingIdAsync(id);
