@@ -56,18 +56,7 @@ namespace BookingSystem.API.Controllers
                 return NotFound($"Booking with ID {id} not found.");
             }
 
-            var bookingDto = new BookingDto
-            {
-                Id = booking.Id,
-                StartTime = booking.StartTime,
-                EndTime = booking.EndTime,
-                IsCancelled = booking.IsCancelled,
-                CustomerName = booking.Customer != null ? $"{booking.Customer.FirstName} {booking.Customer.LastName}" : "Unknown Customer",
-                EmployeeName = booking.Employee != null ? $"{booking.Employee.FirstName} {booking.Employee.LastName}" : "Unknown Employee",
-                Services = [.. booking.Services.Select(s => s.ServiceName)]
-            };
-
-            return Ok(bookingDto);
+            return Ok(booking);
         }
 
 
