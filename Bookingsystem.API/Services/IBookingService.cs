@@ -2,7 +2,8 @@
 
 namespace BookingSystem.API.Services
 {
-    public class IBookingService
+    public interface IBookingService
     {
+        Task<IEnumerable<BookingDto>> GetAllBookingDtosAsync();
     }
 }
