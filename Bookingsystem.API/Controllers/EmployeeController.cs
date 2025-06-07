@@ -1,5 +1,6 @@
 ﻿using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
+using BookingSystem.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingSystem.API.Controllers
@@ -10,11 +11,16 @@ namespace BookingSystem.API.Controllers
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IEmployeeService _employeeService;
 
-        public EmployeeController(IBookingRepository bookingRepository, IEmployeeRepository employeeRepository)
+        public EmployeeController(
+            IBookingRepository bookingRepository,
+            IEmployeeRepository employeeRepository,
+            IEmployeeService employeeService)
         {
             _bookingRepository = bookingRepository;
             _employeeRepository = employeeRepository;
+            _employeeService = employeeService;
         }
 
         [HttpGet]
@@ -62,24 +68,7 @@ namespace BookingSystem.API.Controllers
         [HttpGet("employee/{employeeId}")]
         public async Task<IActionResult> GetBookingsForEmployee(int employeeId, [FromQuery] string? period)
         {
-            DateTime? startDate = null;
-            DateTime? endDate = null;
-
-            if (!string.IsNullOrEmpty(period))
-            {
-                if(period.Equals("day", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Todays bookings
-                    startDate = DateTime.Today;
-                    endDate = DateTime.Today.AddDays(1);
-                }
-                else if (period.Equals("week", StringComparison.OrdinalIgnoreCase))
-                {
-                    // From today to 7 days ahead
-                    startDate = DateTime.Today;
-                    endDate = DateTime.Today.AddDays(7);
-                }
-            }
+            var (startDate, endDate) = _employeeService.GetPeriodDates(period);
 
             var bookings = await _bookingRepository.GetBookingsForEmployeeAsync(employeeId, startDate, endDate);
 

@@ -1,5 +1,6 @@
 using BookingSystem.API.Data;
 using BookingSystem.API.Repositories;
+using BookingSystem.API.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -18,6 +19,10 @@ namespace Bookingsystem.API
                     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
+            
+            // Services 
+            builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+            builder.Services.AddScoped<IDateTimeService, DateTimeService>();
 
             // connectionstring
             builder.Services.AddDbContext<AppDbContext>(options =>
