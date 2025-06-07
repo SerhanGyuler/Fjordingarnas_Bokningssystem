@@ -155,5 +155,25 @@ namespace BookingSystem.API.Services
             return (true, null, responseDto);
         }
 
+        public async Task<(bool Success, string? Error)> RescheduleBookingAsync(int id, [FromBody] RescheduleBookingDto dto)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(id);
+            if (booking == null) 
+            {
+                return (false, $"Booking with {id} not found");
+            }
+
+            if (booking.IsCancelled)
+            {
+                return (false, $"Cannot reschedule a cancelled booking.");
+            }
+
+            booking.StartTime = dto.NewStartTime;
+            booking.EndTime = dto.NewEndTime;
+
+            await _bookingRepository.SaveChangesAsync();
+
+            return (true, null);
+        }
     }
 }

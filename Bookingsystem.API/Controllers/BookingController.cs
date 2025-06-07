@@ -130,21 +130,19 @@ namespace BookingSystem.API.Controllers
         [HttpPatch("reschedule/{id}")]
         public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingDto dto)
         {
-            var booking = await _bookingRepository.GetByIdAsync(id);
-            if (booking == null)
+            var (success, error) = await _bookingService.RescheduleBookingAsync(id, dto);
+
+            if (!success) 
             {
-                return NotFound($"Booking with ID {id} not found.");
+                if (error?.Contains("Not found") == true)
+                {
+                    return NotFound(error);
+                }
+                else if (error?.Contains("reschedule") == true)
+                {
+                    return BadRequest("Cannot reschedule a cancelled booking.");
+                }
             }
-
-            if (booking.IsCancelled)
-            {
-                return BadRequest("Cannot reschedule a cancelled booking.");
-            }
-
-            booking.StartTime = dto.NewStartTime;
-            booking.EndTime = dto.NewEndTime;
-
-            await _bookingRepository.SaveChangesAsync();
 
             return Ok($"Booking with ID {id} has been rescheduled.");
         }
