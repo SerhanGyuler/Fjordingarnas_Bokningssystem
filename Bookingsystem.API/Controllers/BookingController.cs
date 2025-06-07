@@ -216,72 +216,18 @@ namespace BookingSystem.API.Controllers
         [HttpGet("bookings/overview")]
         public async Task<IActionResult> GetBookingsOverview([FromQuery] string range = "week")
         {
-            var now = DateTime.UtcNow;
-
-            var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
-            var endDateWeek = startDateWeek.AddDays(7);
-
-            var startDateMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var endDateMonth = startDateMonth.AddMonths(1);
-
-            DateTime startDate, endDate;
-
-            if (range.ToLower() == "month")
-            {
-                startDate = startDateMonth;
-                endDate = endDateMonth;
-            }
-            else
-            {
-                startDate = startDateWeek;
-                endDate = endDateWeek;
-            }
-
-            var bookings = await _bookingRepository.GetBookingsInDateRangeAsync(startDate, endDate);
-
-
-            var bookingsGrouped = bookings
-                .Select(b => new BookingOverviewDto
-                {
-                    Date = b.StartTime.Date,
-                    StartTime = b.StartTime.ToString("HH:mm"),
-                    EndTime = b.EndTime.ToString("HH:mm"),
-                    Services = b.Services.Select(s => s.ServiceName!).ToArray(),
-                    Employee = b.Employee!.FirstName + " " + b.Employee.LastName,
-                    Customer = b.Customer!.FirstName + " " + b.Customer.LastName,
-                })
-                .GroupBy(b => b.Date)
-                .ToDictionary(
-                    g => g.Key.ToString("yyyy-MM-dd"),
-                    g => g.ToList()
-                );
-
-            return Ok(new
-            {
-                Range = range.ToLower(),
-                StartDate = startDate.ToString("yyyy-MM-dd"),
-                EndDate = endDate.ToString("yyyy-MM-dd"),
-                Bookings = bookingsGrouped
-            });
+            var overview = await _bookingService.GetBookingsOverviewAsync(range);
+            return Ok(overview);
         }
 
         [HttpGet("price")]
         public async Task<IActionResult> GetPriceOfBooking(int id)
         {
-            var services = await _serviceRepository.GetServicesByBookingIdAsync(id);
+            var priceOverview = await _bookingService.GetPriceOfBookingAsync(id);
+            if (priceOverview == null)
+                return NotFound($"Booking with ID {id} not found.");
 
-            var servicePrices = services
-                .Select(s => new BookingPriceDto
-                {
-                    ServiceName = s.ServiceName,
-                    Price = s.Price
-                });
-
-            return Ok(new
-            {
-                Prices = servicePrices,
-                Total = servicePrices.Sum(s => s.Price)
-            });
+            return Ok(priceOverview);
         }
     }
 }
