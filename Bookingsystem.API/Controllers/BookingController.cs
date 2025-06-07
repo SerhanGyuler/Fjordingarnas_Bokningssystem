@@ -62,42 +62,14 @@ namespace BookingSystem.API.Controllers
 
         // POST (Create Booking)
         [HttpPost]
-        public async Task<ActionResult<NewBookingDto>> CreateBooking([FromBody] BookingInputDto NewBookingDto)
+        public async Task<ActionResult<NewBookingDto>> CreateBooking(
+        [FromBody] BookingInputDto bookingInput)
         {
-            var newBooking = await _bookingRepository.CreateBookingAsync(NewBookingDto);
+            var result = await _bookingService.CreateBookingAsync(bookingInput);
 
-            if (newBooking == null)
-            {
-                return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
-            }
-
-            var bookingDtoOut = new NewBookingDto
-            {
-                Id = newBooking.Id,
-                StartTime = newBooking.StartTime,
-                EndTime = newBooking.EndTime,
-                IsCancelled = newBooking.IsCancelled,
-                Customer = new CustomerDto
-                {
-                    FirstName = newBooking.Customer.FirstName,
-                    LastName = newBooking.Customer.LastName,
-                    PhoneNumber = newBooking.Customer.PhoneNumber
-                },
-                Employee = new EmployeeDto
-                {
-                    FirstName = newBooking.Employee.FirstName,
-                    LastName = newBooking.Employee.LastName,
-                    PhoneNumber = newBooking.Employee.PhoneNumber
-                },
-                Services = newBooking.Services.Select(s => new ServiceDto
-                {
-                    ServiceName = s.ServiceName,
-                    Duration = s.Duration,
-                    Price = s.Price
-                }).ToList()
-            };
-
-            return Ok(bookingDtoOut);
+            return result is null
+                ? BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.")
+                : Ok(result);
         }
 
 
@@ -105,16 +77,15 @@ namespace BookingSystem.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _bookingRepository.GetByIdAsync(id);
-
-            if (booking == null)
+            try
             {
-                return NotFound($"Booking with ID {id} not found.");
+                await _bookingService.DeleteAsync(id);
+                return Ok($"Booking with ID {id} has been deleted.");
             }
-
-            await _bookingRepository.DeleteAsync(booking);
-            await _bookingRepository.SaveChangesAsync();
-            return Ok($"Booking with ID {id} has been deleted.");
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // PUT update booking      

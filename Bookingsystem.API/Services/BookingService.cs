@@ -50,5 +50,52 @@ namespace BookingSystem.API.Services
                 Services = [.. booking.Services.Select(s => s.ServiceName)]
             };
         }
+
+        public async Task<NewBookingDto?> CreateBookingAsync(BookingInputDto input)
+        {
+            var newBooking = await _bookingRepository.CreateBookingAsync(input);
+            if (newBooking is null) return null;
+
+            // Manual mapping kept for now (zero external dependencies, minimal change).
+            return new NewBookingDto
+            {
+                Id = newBooking.Id,
+                StartTime = newBooking.StartTime,
+                EndTime = newBooking.EndTime,
+                IsCancelled = newBooking.IsCancelled,
+
+                Customer = new CustomerDto
+                {
+                    FirstName = newBooking.Customer.FirstName,
+                    LastName = newBooking.Customer.LastName,
+                    PhoneNumber = newBooking.Customer.PhoneNumber
+                },
+
+                Employee = new EmployeeDto
+                {
+                    FirstName = newBooking.Employee.FirstName,
+                    LastName = newBooking.Employee.LastName,
+                    PhoneNumber = newBooking.Employee.PhoneNumber
+                },
+
+                Services = newBooking.Services.Select(s => new ServiceDto
+                {
+                    ServiceName = s.ServiceName,
+                    Duration = s.Duration,
+                    Price = s.Price
+                }).ToList()
+            };
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(id);
+            if (booking is null)
+                throw new KeyNotFoundException($"Booking with ID {id} not found.");
+
+            await _bookingRepository.DeleteAsync(booking);
+            await _bookingRepository.SaveChangesAsync();
+        }
+
     }
 }
