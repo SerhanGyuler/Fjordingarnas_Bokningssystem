@@ -175,5 +175,76 @@ namespace BookingSystem.API.Services
 
             return (true, null);
         }
+
+        public async Task<BookingsOverviewResponseDto> GetBookingsOverviewAsync(string range)
+        {
+            var (startDate, endDate) = GetDateRange(range);
+
+            var bookings = await _bookingRepository.GetBookingsInDateRangeAsync(startDate, endDate);
+
+            var bookingsGrouped = bookings
+                .Select(b => new BookingOverviewDto
+                {
+                    Date = b.StartTime.Date,
+                    StartTime = b.StartTime.ToString("HH:mm"),
+                    EndTime = b.EndTime.ToString("HH:mm"),
+                    Services = b.Services.Select(s => s.ServiceName!).ToArray(),
+                    Employee = b.Employee!.FirstName + " " + b.Employee.LastName,
+                    Customer = b.Customer!.FirstName + " " + b.Customer.LastName,
+                })
+                .GroupBy(b => b.Date)
+                .ToDictionary(
+                    g => g.Key.ToString("yyyy-MM-dd"),
+                    g => g.ToList()
+                );
+
+            return new BookingsOverviewResponseDto
+            {
+                Range = range.ToLower(),
+                StartDate = startDate.ToString("yyyy-MM-dd"),
+                EndDate = endDate.ToString("yyyy-MM-dd"),
+                Bookings = bookingsGrouped
+            };
+        }
+
+        //used in GetBookingsOverviewAsync
+        private (DateTime startDate, DateTime endDate) GetDateRange(string range)
+        {
+            var now = DateTime.UtcNow;
+            if (range.ToLower() == "month")
+            {
+                var startDateMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDateMonth = startDateMonth.AddMonths(1);
+                return (startDateMonth, endDateMonth);
+            }
+            else
+            {
+                var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
+                var endDateWeek = startDateWeek.AddDays(7);
+                return (startDateWeek, endDateWeek);
+            }
+        }
+
+        public async Task<BookingPriceOverviewDto?> GetPriceOfBookingAsync(int bookingId)
+        {
+            var services = await _serviceRepository.GetServicesByBookingIdAsync(bookingId);
+
+            if (services == null || !services.Any())
+                return null;
+
+            var servicePrices = services
+                .Select(s => new BookingPriceDto
+                {
+                    ServiceName = s.ServiceName,
+                    Price = s.Price
+                })
+                .ToList();
+
+            return new BookingPriceOverviewDto
+            {
+                Prices = servicePrices,
+                Total = servicePrices.Sum(s => s.Price)
+            };
+        }
     }
 }
