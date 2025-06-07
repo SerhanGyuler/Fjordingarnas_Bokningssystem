@@ -24,6 +24,59 @@ namespace BookingSystem.API.Services
                 PhoneNumber = c.PhoneNumber
             }).ToList();
         }
+
+        public async Task<CustomerDto?> GetCustomerDtoByIdAsync(int id)
+        {
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            return new CustomerDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+        }
+        public async Task<CustomerDto?> GetCustomerByFirstNameAsync(string firstName)
+        {
+            var customer = await _customerRepository.GetCustomerByFirstNameAsync(firstName);
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            return new CustomerDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+        }
+
+        public async Task<CustomerDto?> GetCustomerByLastNameAsync(string lastName)
+        {
+            var customer = await _customerRepository.GetCustomerByLastNameAsync(lastName);
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            return new CustomerDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+        }
     }
 
 }
