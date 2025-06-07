@@ -68,25 +68,12 @@ namespace BookingSystem.API.Controllers
         [HttpGet("employee/{employeeId}")]
         public async Task<IActionResult> GetBookingsForEmployee(int employeeId, [FromQuery] string? period)
         {
-            var (startDate, endDate) = _employeeService.GetPeriodDates(period);
+            var bookingDtos = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
 
-            var bookings = await _bookingRepository.GetBookingsForEmployeeAsync(employeeId, startDate, endDate);
-
-            if (bookings == null || bookings.Count == 0)
+            if (bookingDtos == null || bookingDtos.Count == 0)
             {
                 return NotFound("Inga bokningar hittades för denna frisören.");
             }
-
-            var bookingDtos = bookings.Select(b => new BookingDto
-            {
-                Id = b.Id,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                IsCancelled = b.IsCancelled,
-                CustomerName = b.Customer != null ? $"{b.Customer.FirstName} {b.Customer.LastName}" : string.Empty,
-                EmployeeName = b.Employee != null ? $"{b.Employee.FirstName} {b.Employee.LastName}" : string.Empty,
-                Services = b.Services.Select(s => s.ServiceName ?? string.Empty).ToList()
-            }).ToList();
 
             return Ok(bookingDtos);
         }
