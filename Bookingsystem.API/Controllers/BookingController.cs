@@ -62,42 +62,14 @@ namespace BookingSystem.API.Controllers
 
         // POST (Create Booking)
         [HttpPost]
-        public async Task<ActionResult<NewBookingDto>> CreateBooking([FromBody] BookingInputDto NewBookingDto)
+        public async Task<ActionResult<NewBookingDto>> CreateBooking(
+        [FromBody] BookingInputDto bookingInput)
         {
-            var newBooking = await _bookingRepository.CreateBookingAsync(NewBookingDto);
+            var result = await _bookingService.CreateBookingAsync(bookingInput);
 
-            if (newBooking == null)
-            {
-                return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
-            }
-
-            var bookingDtoOut = new NewBookingDto
-            {
-                Id = newBooking.Id,
-                StartTime = newBooking.StartTime,
-                EndTime = newBooking.EndTime,
-                IsCancelled = newBooking.IsCancelled,
-                Customer = new CustomerDto
-                {
-                    FirstName = newBooking.Customer.FirstName,
-                    LastName = newBooking.Customer.LastName,
-                    PhoneNumber = newBooking.Customer.PhoneNumber
-                },
-                Employee = new EmployeeDto
-                {
-                    FirstName = newBooking.Employee.FirstName,
-                    LastName = newBooking.Employee.LastName,
-                    PhoneNumber = newBooking.Employee.PhoneNumber
-                },
-                Services = newBooking.Services.Select(s => new ServiceDto
-                {
-                    ServiceName = s.ServiceName,
-                    Duration = s.Duration,
-                    Price = s.Price
-                }).ToList()
-            };
-
-            return Ok(bookingDtoOut);
+            return result is null
+                ? BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.")
+                : Ok(result);
         }
 
 
@@ -105,65 +77,34 @@ namespace BookingSystem.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooking(int id)
         {
-            var booking = await _bookingRepository.GetByIdAsync(id);
-
-            if (booking == null)
+            try
             {
-                return NotFound($"Booking with ID {id} not found.");
+                await _bookingService.DeleteAsync(id);
+                return Ok($"Booking with ID {id} has been deleted.");
             }
-
-            await _bookingRepository.DeleteAsync(booking);
-            await _bookingRepository.SaveChangesAsync();
-            return Ok($"Booking with ID {id} has been deleted.");
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // PUT update booking      
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBooking(int id, [FromBody] BookingInputDto bookingDto)
         {
-            var existingBooking = await _bookingRepository.GetByIdWithServicesAsync(id);
+            var (success, error, result) = await _bookingService.UpdateBookingAsync(id, bookingDto);
 
-            if (existingBooking == null)
+            if (!success)
             {
-                return NotFound($"Booking with ID {id} not found.");
+                if (error?.Contains("Not found") == true)
+                {
+                    return NotFound(error);
+                }
+
+                return BadRequest("Unknown error");
             }
 
-            var customer = await _customerRepository.GetCustomerByIdAsync(bookingDto.CustomerId);
-            var employee = await _employeeRepository.GetByIdAsync(bookingDto.EmployeeId);
-            var services = await _serviceRepository.GetByIdsAsync(bookingDto.ServiceIds);
-
-            if (customer == null || employee == null || services.Count() != bookingDto.ServiceIds.Count)
-            {
-                return BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.");
-            }
-
-            // Update fields
-            existingBooking.StartTime = bookingDto.StartTime;
-            existingBooking.EndTime = bookingDto.EndTime;
-            existingBooking.CustomerId = bookingDto.CustomerId;
-            existingBooking.EmployeeId = bookingDto.EmployeeId;
-            existingBooking.Services = services.ToList();
-
-            await _bookingRepository.UpdateAsync(existingBooking);
-            var result = await _bookingRepository.SaveChangesAsync();
-
-            if (result == false)
-            {
-                return StatusCode(500, "Failed to update booking");
-            }
-
-            var responseDto = new BookingDto
-            {
-                Id = existingBooking.Id,
-                StartTime = existingBooking.StartTime,
-                EndTime = existingBooking.EndTime,
-                IsCancelled = existingBooking.IsCancelled,
-                CustomerName = customer != null ? $"{customer.FirstName} {customer.LastName}" : "Unknown Customer",
-                EmployeeName = employee != null ? $"{employee.FirstName} {employee.LastName}" : "Unknown Employee",
-                Services = [.. services.Select(s => s.ServiceName)]
-            };
-
-            return Ok(responseDto);
+            return Ok(result);
         }
 
 
