@@ -10,87 +10,149 @@ using System.Threading.Tasks;
 using BookingSystem.API.Data;
 using BookingSystem.API.Repositories;
 using Microsoft.Data.Sqlite;
+using System.Data.Common;
 
 
 namespace BookingSystem.Tests
 {
-    [TestClass]
-    public class DatabaseTestBase : IDisposable
+
+    public class TestContextFactory : IDisposable
     {
-        protected AppDbContext Context { get; private set; }
-        private SqliteConnection _connection;
+        private DbConnection _connection;
 
-        [TestInitialize]
-        public void Setup()
+        private DbContextOptions<AppDbContext> CreateOptions()
         {
-            // Dispose of any existing connection/context
-            Context?.Dispose();
-            _connection?.Close();
-            _connection?.Dispose();
-
-            // Create and open NEW connection
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
-
-            // Configure DbContext
-            var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseSqlite(_connection)
-                .Options;
-
-            Context = new AppDbContext(options);
-            Context.Database.EnsureCreated();
+            return new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(_connection).Options;
         }
 
-        [TestCleanup]
-        public void TearDown()
+        public AppDbContext CreateContext()
         {
-            Context?.Dispose();
-            _connection?.Close();
-            _connection?.Dispose();
+            if (_connection == null)
+            {
+                _connection = new SqliteConnection("DataSource=:memory:");
+                _connection.Open();
+
+                using var tempContext = new AppDbContext(CreateOptions());
+                tempContext.Database.EnsureCreated();
+            }
+
+            return new TestAppDbContext(CreateOptions());
         }
 
         public void Dispose()
         {
-            TearDown();
+            _connection?.Dispose();
+            _connection = null;
         }
     }
-    [TestClass]
-    public class BookingRepositoryMockTests 
+
+    public class TestAppDbContext : AppDbContext
     {
+        public TestAppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+        {
+        }
     }
 
     [TestClass]
-    public class BookingRepositoryIntegrationTests : DatabaseTestBase
+    public class BookingRepositoryIntegrationTests
     {
+        private TestContextFactory _factory;
+
+        [TestInitialize]
+        public void Init() => _factory = new TestContextFactory();
+
+        [TestCleanup]
+        public void Cleanup() => _factory.Dispose();
+
         [TestMethod]
         public async Task GetBookingsForEmployeeAsync_ReturnsCorrectBookings()
         {
-            // Clear seeded bookings
-            Context.Bookings.RemoveRange(Context.Bookings);
-            await Context.SaveChangesAsync();
+            using (var context = _factory.CreateContext())
+            {
+                context.Bookings.RemoveRange(context.Bookings);
+                await context.SaveChangesAsync();
 
-            var testBookings = new List<Booking> {
-                new Booking { EmployeeId = 1, CustomerId = 1, IsCancelled = false,
-                    StartTime = new DateTime(2024, 1, 1, 10, 0, 0), EndTime = new DateTime(2024, 1, 1, 11, 0, 0) },
-                new Booking { EmployeeId = 1, CustomerId = 2, IsCancelled = false,
-                    StartTime = new DateTime(2024, 1, 1, 12, 0, 0), EndTime = new DateTime(2024, 1, 1, 13, 0, 0) },
-                new Booking { EmployeeId = 2, CustomerId = 3, IsCancelled = false,
-                    StartTime = new DateTime(2024, 1, 1, 14, 0, 0), EndTime = new DateTime(2024, 1, 1, 15, 0, 0) },
-                new Booking { EmployeeId = 1, CustomerId = 4, IsCancelled = true,
-                    StartTime = new DateTime(2024, 1, 1, 16, 0, 0), EndTime = new DateTime(2024, 1, 1, 17, 0, 0) }
+                var testBookings = new List<Booking> {
+                        new Booking { EmployeeId = 1, CustomerId = 1, IsCancelled = false,
+                        StartTime = new DateTime(2024, 1, 1, 10, 0, 0), EndTime = new DateTime(2024, 1, 1, 11, 0, 0) },
+                        new Booking { EmployeeId = 1, CustomerId = 2, IsCancelled = false,
+                        StartTime = new DateTime(2024, 1, 1, 12, 0, 0), EndTime = new DateTime(2024, 1, 1, 13, 0, 0) },
+                        new Booking { EmployeeId = 2, CustomerId = 3, IsCancelled = false,
+                        StartTime = new DateTime(2024, 1, 1, 14, 0, 0), EndTime = new DateTime(2024, 1, 1, 15, 0, 0) },
+                        new Booking { EmployeeId = 1, CustomerId = 4, IsCancelled = true,
+                        StartTime = new DateTime(2024, 1, 1, 16, 0, 0), EndTime = new DateTime(2024, 1, 1, 17, 0, 0) }
+                    };
+
+                context.AddRange(testBookings);
+
+                await context.SaveChangesAsync();
             };
 
-            Context.Bookings.AddRange(testBookings);
-            await Context.SaveChangesAsync();
+            using (var context = _factory.CreateContext())
+            {
+                var repo = new BookingRepository(context);
+                var result = await repo.GetBookingsForEmployeeAsync(1, null, null);
 
-            var repository = new BookingRepository(Context);
-            var result = await repository.GetBookingsForEmployeeAsync(1, null, null);
+                Assert.AreEqual(2, result.Count);
+                Assert.IsTrue(result.All(b => b.EmployeeId == 1));
+                Assert.IsTrue(result.All(b => !b.IsCancelled));
+            }
 
-            Assert.AreEqual(2, result.Count);
-            Assert.IsTrue(result.All(b => b.EmployeeId == 1));
-            Assert.IsTrue(result.All(b => !b.IsCancelled));
         }
 
+        [TestMethod]
+        public async Task GetAllAsync_ReturnsCustomerEmployeeServices()
+        {
+            using (var context = _factory.CreateContext())
+            {
+                context.Bookings.RemoveRange(context.Bookings);
+                await context.SaveChangesAsync();
 
+                var customer = new Customer { FirstName = "Alice", LastName = "Chalice", PhoneNumber = "123213" };
+                var employee = new Employee { FirstName = "Ferdinand", LastName = "Berdinand", PhoneNumber = "34343" };
+                var services = new List<Service> {
+                    new Service { ServiceName = "Tvätt", Duration = TimeSpan.FromMinutes(15), Price = 123 },
+                    new Service { ServiceName = "Klipp", Duration = TimeSpan.FromMinutes(30), Price = 143 },
+                    new Service { ServiceName = "Hårtransplantation", Duration = TimeSpan.FromMinutes(180), Price = 80 },
+                };
+
+                var booking = new Booking
+                {
+                    Customer = customer,
+                    Employee = employee,
+                    Services = services,
+                    StartTime = DateTime.UtcNow,
+                    EndTime = DateTime.UtcNow.AddMinutes(15),
+                    IsCancelled = false
+                };
+
+                context.Bookings.Add(booking);
+                var result = await context.SaveChangesAsync();
+            }
+
+            using (var context = _factory.CreateContext())
+            {
+                var repo = new BookingRepository(context);
+                var result = (await repo.GetAllAsync()).ToList();
+
+                Assert.AreEqual(1, result.Count);
+                Assert.AreEqual("Alice", result[0].Customer.FirstName);
+                Assert.AreEqual("Ferdinand", result[0].Employee.FirstName);
+                Assert.AreEqual("Klipp", result[0].Services.OrderBy(s => s.ServiceName).ToList()[1].ServiceName);
+            }
+        }
+
+        //[TestMethod]
+        //public async Task GetAllAsync_ReturnsCustomerEmployeeServices()
+        //{
+        //    var options = new DbContextOptionsBuilder<TestContext>()
+        //        .UseInMemoryDatabase(databaseName: "Test1")
+        //        .Options;
+
+
+        //}
     }
 }
+
