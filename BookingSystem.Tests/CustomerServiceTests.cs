@@ -166,6 +166,55 @@ public class CustomerServiceTests
     }
 
     [TestMethod]
+    public async Task GetCustomerByPhoneNumberAsync_ShouldReturnCustomerDto_WhenCustomerIsFound()
+    {
+        // Arrange
+        string phoneNumber = "123123";
+        var customer = new Customer
+        {
+            Id = 1,
+            FirstName = "Kylian",
+            LastName = "Mbappe",
+            PhoneNumber = phoneNumber
+        };
+
+        _customerRepoMock
+            .Setup(r => r.GetCustomerByPhoneNumberAsync(phoneNumber))
+            .ReturnsAsync(customer);
+
+        // Act
+        var result = await _customerService.GetCustomerByPhoneNumberAsync(phoneNumber);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(customer.Id, result.Id);
+        Assert.AreEqual(customer.FirstName, result.FirstName);
+        Assert.AreEqual(customer.LastName, result.LastName);
+        Assert.AreEqual(customer.PhoneNumber, result.PhoneNumber);
+
+        _customerRepoMock.Verify(r => r.GetCustomerByPhoneNumberAsync(phoneNumber), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetCustomerByPhoneNumberAsync_ShouldReturnNull_WhenCustomerIsNotFound()
+    {
+        // Arrange
+        string phoneNumber = "98765";
+
+        _customerRepoMock
+            .Setup(r => r.GetCustomerByPhoneNumberAsync(phoneNumber))
+            .ReturnsAsync((Customer)null!);
+
+        // Act
+        var result = await _customerService.GetCustomerByPhoneNumberAsync(phoneNumber);
+
+        // Assert
+        Assert.IsNull(result);
+
+        _customerRepoMock.Verify(r => r.GetCustomerByPhoneNumberAsync(phoneNumber), Times.Once);
+    }
+
+    [TestMethod]
     public async Task CreateCustomerAsync_ShouldCreateCustomer_ReturnSuccessfulMessage()
     {
         // Arrange
