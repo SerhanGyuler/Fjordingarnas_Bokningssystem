@@ -1,3 +1,4 @@
+using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
 using BookingSystem.API.Services;
 using Fjordingarnas_Bokningssystem.Models;
@@ -162,6 +163,66 @@ public class CustomerServiceTests
 
         // Assert
         Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task UpdateCustomerAsync_ShouldReturnNull_WhenCustomerNotFound()
+    {
+        // Arrange
+        _customerRepoMock
+            .Setup(r => r.GetCustomerByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync((Customer)null!);
+
+        var updatedCustomerDto = new CustomerDto
+        {
+            FirstName = "Test",
+            LastName = "Name",
+            PhoneNumber = "00000"
+        };
+
+        // Act
+        var result = await _customerService.UpdateCustomerAsync(1, updatedCustomerDto);
+
+        // Assert
+        Assert.IsNull(result);
+        _customerRepoMock.Verify(repo => repo.UpdateCustomerAsync(It.IsAny<Customer>()), Times.Never);
+        _customerRepoMock.Verify(repo => repo.SaveChangesAsync(), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task UpdateCustomerAsync_ShouldReturnUpdatedDto_WhenCustomerIsFound()
+    {
+        // Arrange
+        var existingCustomer = new Customer
+        {
+            Id = 1,
+            FirstName = "OldFirstname",
+            LastName = "OldLastname",
+            PhoneNumber = "1234567"
+        };
+
+        var updatedCustomerDto = new CustomerDto
+        {
+            FirstName = "NewFirstname",
+            LastName = "NewLastname",
+            PhoneNumber = "7654321"
+        };
+
+        _customerRepoMock
+            .Setup(r => r.GetCustomerByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(existingCustomer);
+
+        // Act
+        var result = await _customerService.UpdateCustomerAsync(1, updatedCustomerDto);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(updatedCustomerDto.FirstName, result.FirstName);
+        Assert.AreEqual(updatedCustomerDto.LastName, result.LastName);
+        Assert.AreEqual(updatedCustomerDto.PhoneNumber, result.PhoneNumber);
+
+        _customerRepoMock.Verify(repo => repo.UpdateCustomerAsync(existingCustomer), Times.Once);
+        _customerRepoMock.Verify(repo => repo.SaveChangesAsync(), Times.Once);
     }
 
     [TestMethod]
