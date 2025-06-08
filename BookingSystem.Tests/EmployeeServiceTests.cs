@@ -1,5 +1,6 @@
 using BookingSystem.API.Repositories;
 using BookingSystem.API.Services;
+using Fjordingarnas_Bokningssystem.Models;
 using Moq;
 
 namespace BookingSystem.Tests;
@@ -79,5 +80,82 @@ public class EmployeeServiceTests
         Assert.AreEqual(new DateTime(2025, 6, 15), result.EndDate);
     }
 
+    // GetBookingsForEmpolyeesAsync tests ---------------
+    [TestMethod]
+    public async Task GetBookingsForEmployeeAsync_ReturnsEmptyList_WhenBookingsAreNull()
+    {
+        // Arrange
+        int employeeId = 1;
+        string period = "day";
+        _bookingRepositoryMock
+            .Setup(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+            .ReturnsAsync(new List<Booking>());
 
+        // Act
+        var result = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(0, result.Count);
+
+        _bookingRepositoryMock.Verify(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetBookingsForEmployeeAsync_ReturnsEmptyList_WhenNoBookingsExist()
+    {
+        // Arrange
+        int employeeId = 1;
+        string period = "day";
+        _bookingRepositoryMock
+            .Setup(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+            .ReturnsAsync(new List<Booking>());
+
+        // Act
+        var result = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(0, result.Count);
+
+        _bookingRepositoryMock.Verify(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task GetBookingsForEmployeeAsync_ReturnsBookingDtos_WhenBookingsExist()
+    {
+        // Arrange
+        int employeeId = 1;
+        string period = "day";
+        var bookings = new List<Booking>
+            {
+                new Booking
+                {
+                    Id = 1,
+                    StartTime = new DateTime(2025, 6, 9, 9, 0, 0),
+                    EndTime = new DateTime(2025, 6, 9, 10, 0, 0),
+                    IsCancelled = false,
+                    Customer = new Customer { FirstName = "Frank", LastName = "Ribbery" },
+                    Employee = new Employee { FirstName = "Chris", LastName = "Tucker" },
+                    Services = new List<Service> { new Service { ServiceName = "Fade-Haircut" } }
+                }
+            };
+
+        _bookingRepositoryMock
+            .Setup(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+            .ReturnsAsync(bookings);
+
+        // Act
+        var result = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(bookings[0].Id, result[0].Id);
+        Assert.AreEqual("Frank Ribbery", result[0].CustomerName);
+        Assert.AreEqual("Chris Tucker", result[0].EmployeeName);
+        CollectionAssert.Contains(result[0].Services, "Fade-Haircut");
+
+        _bookingRepositoryMock.Verify(repo => repo.GetBookingsForEmployeeAsync(employeeId, It.IsAny<DateTime?>(), It.IsAny<DateTime?>()), Times.Once);
+    }
 }

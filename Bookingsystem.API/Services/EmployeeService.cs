@@ -19,7 +19,7 @@ namespace BookingSystem.API.Services
         {
             if (string.IsNullOrEmpty(period))
                 return (null, null);
-            
+
             if (period.Equals("day", StringComparison.OrdinalIgnoreCase))
             {
                 return (_dateTimeProvider.Today, _dateTimeProvider.Today.AddDays(1));
@@ -28,8 +28,10 @@ namespace BookingSystem.API.Services
             {
                 return (_dateTimeProvider.Today, _dateTimeProvider.Today.AddDays(7));
             }
-
-            return (null, null);
+            else
+            {
+                throw new ArgumentException($"Ogiltig periodparameter: '{period}'. Tillåtna värden är 'day' eller 'week'.");
+            }
         }
 
         public async Task<List<BookingDto>> GetBookingsForEmployeeAsync(int employeeId, string? period)
