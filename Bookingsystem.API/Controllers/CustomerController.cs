@@ -92,7 +92,7 @@ namespace BookingSystem.API.Controllers
             return Ok(result);
         }
 
-        //// PUT update an existing customer
+        // PUT update an existing customer
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
         {
@@ -106,21 +106,18 @@ namespace BookingSystem.API.Controllers
             return Ok(updatedCustomer);
         }
 
-        //// DELETE customer by id
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteCustomer(int id)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByIdAsync(id);
+        // DELETE customer by id
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCustomer(int id)
+        {
+            var result = await _customerService.DeleteCustomerAsync(id);
 
-        //    if (customer == null)
-        //    {
-        //        return NotFound($"Customer with ID {id} not found.");
-        //    }
+            if (result == null)
+            {
+                return NotFound($"Customer with ID {id} was not found.");
+            }
 
-        //    await _customerRepository.DeleteCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
-        //    return Ok($"Customer with ID {id} has been deleted.");
-        //}
-
+            return Ok(result);
+        }
     }
 } 

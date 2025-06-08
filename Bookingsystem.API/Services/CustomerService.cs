@@ -136,5 +136,19 @@ namespace BookingSystem.API.Services
                 PhoneNumber = customer.PhoneNumber
             };
         }
+
+        public async Task<string?> DeleteCustomerAsync(int id)
+        {
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+            if (customer == null)
+            {
+                return null;
+            }
+
+            await _customerRepository.DeleteCustomerAsync(customer);
+            await _customerRepository.SaveChangesAsync();
+
+            return $"Customer with ID: {id} has been deleted.";
+        }
     }
 }
