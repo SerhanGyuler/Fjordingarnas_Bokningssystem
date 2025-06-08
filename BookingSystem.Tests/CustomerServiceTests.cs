@@ -163,4 +163,48 @@ public class CustomerServiceTests
         // Assert
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public async Task DeleteCustomerAsync_ShouldReturnNull_WhenNotFound()
+    {
+        // Arrange
+        _customerRepoMock
+            .Setup(repo => repo.GetCustomerByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync((Customer)null!);
+
+        // Act
+        var result = await _customerService.DeleteCustomerAsync(1);
+
+        // Assert
+        Assert.IsNull(result);
+        // Make sure to NOT save when customer is not found
+        _customerRepoMock.Verify(repo => repo.DeleteCustomerAsync(It.IsAny<Customer>()), Times.Never);
+        _customerRepoMock.Verify(repo => repo.SaveChangesAsync(), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task DeleteCustomerAsync_DeletesCustomer_WhenCustomerIsFound()
+    {
+        // Arrange 
+        var customer = new Customer
+        {
+            Id = 1,
+            FirstName = "Test",
+            LastName = "Customer"
+        };
+
+        _customerRepoMock
+            .Setup(repo => repo.GetCustomerByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(customer);
+
+        // Act
+        var result = await _customerService.DeleteCustomerAsync(1);
+
+        // Assert
+        Assert.IsNotNull(result);
+        StringAssert.Contains(result, "Customer with ID 1 has been deleted");
+
+        _customerRepoMock.Verify(repo => repo.DeleteCustomerAsync(customer), Times.Once);
+        _customerRepoMock.Verify(repo => repo.SaveChangesAsync(), Times.Once);
+    }
 }
