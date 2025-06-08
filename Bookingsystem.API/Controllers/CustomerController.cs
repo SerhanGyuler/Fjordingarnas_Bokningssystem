@@ -85,14 +85,12 @@ namespace BookingSystem.API.Controllers
         }
 
         // POST create a new customer
-        //[HttpPost]
-        //public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
-        //{
-        //    var customer = new Customer { Id = id, FirstName = firstName, LastName = lastName, PhoneNumber = phoneNumber };
-        //    await _customerRepository.AddCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
-        //    return Ok($"Customer {customer.FirstName} {customer.LastName} was created created.");
-        //}
+        [HttpPost]
+        public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
+        {
+            var result = await _customerService.CreateCustomerAsync(id, firstName, lastName, phoneNumber);
+            return Ok(result);
+        }
 
         //// PUT update an existing customer
         //[HttpPut("{id}")]

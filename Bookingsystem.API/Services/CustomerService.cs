@@ -1,5 +1,6 @@
 ﻿using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
+using Fjordingarnas_Bokningssystem.Models;
 
 namespace BookingSystem.API.Services
 {
@@ -94,6 +95,22 @@ namespace BookingSystem.API.Services
                 LastName = customer.LastName,
                 PhoneNumber = customer.PhoneNumber
             };
+        }
+
+        public async Task<string> CreateCustomerAsync(int id, string firstName, string lastName, string phoneNumber)
+        {
+            var customer = new Customer
+            {
+                Id = id,
+                FirstName = firstName,
+                LastName = lastName,
+                PhoneNumber = phoneNumber
+            };
+
+            await _customerRepository.AddCustomerAsync(customer);
+            await _customerRepository.SaveChangesAsync();
+
+            return $"Customer {customer.FirstName} {customer.LastName} was created.";
         }
     }
 
