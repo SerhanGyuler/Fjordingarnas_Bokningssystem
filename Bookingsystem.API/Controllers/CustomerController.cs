@@ -70,21 +70,21 @@ namespace BookingSystem.API.Controllers
             return Ok(customer);
         }
 
-        //// GET customers via PhoneNumber
-        //[HttpGet("phonenumber/{PhoneNumber}")]
-        //public async Task<ActionResult<Customer>> GetCustomerViaPhoneNumber(string PhoneNumber)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByPhoneNumberAsync(PhoneNumber);
+        // GET customers via PhoneNumber
+        [HttpGet("phonenumber/{PhoneNumber}")]
+        public async Task<ActionResult<Customer>> GetCustomerViaPhoneNumber(string phoneNumber)
+        {
+            var customer = await _customerService.GetCustomerByPhoneNumberAsync(phoneNumber);
 
-        //    if (customer == null)
-        //    {
-        //        return NotFound($"Customer with PhoneNumber '{PhoneNumber}' not found.");
-        //    }
+            if (customer == null)
+            {
+                return NotFound($"Customer with PhoneNumber '{phoneNumber}' not found.");
+            }
 
-        //    return Ok(customer);
-        //}
+            return Ok(customer);
+        }
 
-        //// POST create a new customer
+        // POST create a new customer
         //[HttpPost]
         //public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
         //{

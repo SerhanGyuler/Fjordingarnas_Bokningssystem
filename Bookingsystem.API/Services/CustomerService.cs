@@ -77,6 +77,24 @@ namespace BookingSystem.API.Services
                 PhoneNumber = customer.PhoneNumber
             };
         }
+
+        public async Task<CustomerDto?> GetCustomerByPhoneNumberAsync(string phoneNumber)
+        {
+            var customer = await _customerRepository.GetCustomerByPhoneNumberAsync(phoneNumber);
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            return new CustomerDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+        }
     }
 
 }
