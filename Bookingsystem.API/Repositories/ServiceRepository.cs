@@ -1,5 +1,7 @@
 ﻿using BookingSystem.API.Data;
+using BookingSystem.API.Models.DTOs;
 using Fjordingarnas_Bokningssystem.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.API.Repositories
@@ -27,11 +29,19 @@ namespace BookingSystem.API.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Service> AddAsync(Service service)
+        public async Task<Service> CreateService(ServiceInputDto serviceInput)
         {
-            _context.Services.Add(service);
+
+            var newService = new Service
+            {
+                ServiceName = serviceInput.ServiceName,
+                Duration = serviceInput.Duration,
+                Price = serviceInput.Price
+            };
+
+            await _context.Services.AddAsync(newService);
             await _context.SaveChangesAsync();
-            return service;
+            return newService;
         }
 
         public async Task<bool> DeleteServiceAsync(int id)
@@ -51,11 +61,17 @@ namespace BookingSystem.API.Repositories
             return await _context.Services.FindAsync(id);
         }
 
-        public async Task<bool> UpdateServiceAsync(Service service)
+        public async Task<Service> UpdateServiceAsync(Service service, ServiceInputDto updateDto)
         {
+            
+            
+            service.ServiceName = updateDto.ServiceName;
+            service.Duration = updateDto.Duration;
+            service.Price = updateDto.Price;
+
             _context.Services.Update(service);
             await _context.SaveChangesAsync();
-            return true;
+            return service;
         }
     }
 }

@@ -3,6 +3,7 @@ using BookingSystem.API.Repositories;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.API.Controllers
 {
@@ -30,29 +31,15 @@ namespace BookingSystem.API.Controllers
         [HttpPost]
         public async Task<ActionResult<ServiceDto>> CreateService([FromBody] ServiceInputDto serviceInput)
         {
-            var newService = new Service
-            {
-                ServiceName = serviceInput.ServiceName,
-                Duration = serviceInput.Duration,
-                Price = serviceInput.Price
-            };
 
-            var createdService = await _serviceRepository.AddAsync(newService);
+            var result = await _serviceRepository.CreateService(serviceInput);
 
-            if (createdService == null)
+            if (result == null)
             {
                 return BadRequest("Could not create service.");
             }
 
-            var serviceDto = new CreatedServiceDto
-            {
-                Id = createdService.Id,
-                ServiceName = createdService.ServiceName!,
-                Duration = createdService.Duration,
-                Price = createdService.Price
-            };
-
-            return Ok(serviceDto);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
@@ -73,23 +60,15 @@ namespace BookingSystem.API.Controllers
         {
             var existingService = await _serviceRepository.GetServiceByIdAsync(id);
 
+
             if (existingService == null)
             {
                 return NotFound($"No service found with id {id}.");
             }
 
-            existingService.ServiceName = updateDto.ServiceName;
-            existingService.Duration = updateDto.Duration;
-            existingService.Price = updateDto.Price;
+            var result = await _serviceRepository.UpdateServiceAsync(existingService, updateDto);
 
-            var updated = await _serviceRepository.UpdateServiceAsync(existingService);
-
-            if (!updated)
-            {
-                return StatusCode(500, "Failed to update service.");
-            }
-
-            return NoContent();
+            return Ok(result);
         }
     }
 }
