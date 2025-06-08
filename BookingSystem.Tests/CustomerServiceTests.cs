@@ -166,6 +166,32 @@ public class CustomerServiceTests
     }
 
     [TestMethod]
+    public async Task CreateCustomerAsync_ShouldCreateCustomer_ReturnSuccessfulMessage()
+    {
+        // Arrange
+        int id = 1;
+        string firstName = "Cristiano";
+        string lastName = "Ronaldo";
+        string phoneNumber = "77777";
+
+        // Act
+        var result = await _customerService.CreateCustomerAsync(id, firstName, lastName, phoneNumber);
+
+        // Assert
+        Assert.IsNotNull(result);
+        StringAssert.Contains(result, $"Customer {firstName} {lastName} was created.");
+
+        // Verifying repository calls, correct data sent
+        _customerRepoMock.Verify(r => r.AddCustomerAsync(It.Is<Customer>(
+            c => c.Id == id &&
+                 c.FirstName == firstName &&
+                 c.LastName == lastName &&
+                 c.PhoneNumber == phoneNumber)), Times.Once);
+
+        _customerRepoMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [TestMethod]
     public async Task UpdateCustomerAsync_ShouldReturnNull_WhenCustomerNotFound()
     {
         // Arrange
