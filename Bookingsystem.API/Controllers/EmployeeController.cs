@@ -68,14 +68,26 @@ namespace BookingSystem.API.Controllers
         [HttpGet("employee/{employeeId}")]
         public async Task<IActionResult> GetBookingsForEmployee(int employeeId, [FromQuery] string? period)
         {
-            var bookingDtos = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
-
-            if (bookingDtos == null || bookingDtos.Count == 0)
+            try
             {
-                return NotFound("Inga bokningar hittades för denna frisören.");
-            }
+                var bookingDtos = await _employeeService.GetBookingsForEmployeeAsync(employeeId, period);
 
-            return Ok(bookingDtos);
+                if (bookingDtos == null || bookingDtos.Count == 0)
+                {
+                    return NotFound("Inga bokningar hittades för denna frisören.");
+                }
+
+                return Ok(bookingDtos);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fel i GetBookingsForEmployee: {ex.Message}");
+                return StatusCode(500, "Ett oväntat fel inträffade.");
+            }
         }
     }
 }
