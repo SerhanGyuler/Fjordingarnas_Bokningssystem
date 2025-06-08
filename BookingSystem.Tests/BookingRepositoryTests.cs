@@ -144,15 +144,54 @@ namespace BookingSystem.Tests
             }
         }
 
-        //[TestMethod]
-        //public async Task GetAllAsync_ReturnsCustomerEmployeeServices()
-        //{
-        //    var options = new DbContextOptionsBuilder<TestContext>()
-        //        .UseInMemoryDatabase(databaseName: "Test1")
-        //        .Options;
+        [TestMethod]
+        public async Task GetByIdAsync_ReturnsCustomerEmployeeServices()
+        {
+            int bookingId;
 
+            using (var context = _factory.CreateContext())
+            {
+                context.Bookings.RemoveRange(context.Bookings);
+                await context.SaveChangesAsync();
 
-        //}
+                var customer = new Customer { FirstName = "Alice", LastName = "Chalice", PhoneNumber = "123213" };
+                var employee = new Employee { FirstName = "Ferdinand", LastName = "Berdinand", PhoneNumber = "34343" };
+                var services = new List<Service>
+                {
+                    new Service { ServiceName = "Tvätt", Duration = TimeSpan.FromMinutes(15), Price = 123 },
+                    new Service { ServiceName = "Klipp", Duration = TimeSpan.FromMinutes(30), Price = 143 },
+                    new Service { ServiceName = "Hårtransplantation", Duration = TimeSpan.FromMinutes(180), Price = 80 },
+                };
+
+                var booking = new Booking
+                {
+                    Customer = customer,
+                    Employee = employee,
+                    Services = services,
+                    StartTime = DateTime.UtcNow,
+                    EndTime = DateTime.UtcNow.AddMinutes(15),
+                    IsCancelled = false
+                };
+
+                context.Bookings.Add(booking);
+                await context.SaveChangesAsync();
+
+                bookingId = booking.Id;
+            }
+
+            using (var context = _factory.CreateContext())
+            {
+                var repo = new BookingRepository(context);
+                var result = await repo.GetByIdAsync(bookingId);
+
+                Assert.IsNotNull(result);
+                Assert.AreEqual("Alice", result.Customer.FirstName);
+                Assert.AreEqual("Ferdinand", result.Employee.FirstName);
+                Assert.IsTrue(3 ==  result.Services.Count);
+                Assert.IsTrue(result.Services.Any(s => s.ServiceName == "Hårtransplantation"));
+                Assert.IsTrue(result.Services.Any(s => s.ServiceName == "Klipp"));
+            }
+        }
     }
 }
 
