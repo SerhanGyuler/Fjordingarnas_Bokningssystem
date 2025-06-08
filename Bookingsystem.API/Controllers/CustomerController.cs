@@ -70,72 +70,54 @@ namespace BookingSystem.API.Controllers
             return Ok(customer);
         }
 
-        //// GET customers via PhoneNumber
-        //[HttpGet("phonenumber/{PhoneNumber}")]
-        //public async Task<ActionResult<Customer>> GetCustomerViaPhoneNumber(string PhoneNumber)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByPhoneNumberAsync(PhoneNumber);
+        // GET customers via PhoneNumber
+        [HttpGet("phonenumber/{PhoneNumber}")]
+        public async Task<ActionResult<Customer>> GetCustomerViaPhoneNumber(string phoneNumber)
+        {
+            var customer = await _customerService.GetCustomerByPhoneNumberAsync(phoneNumber);
 
-        //    if (customer == null)
-        //    {
-        //        return NotFound($"Customer with PhoneNumber '{PhoneNumber}' not found.");
-        //    }
+            if (customer == null)
+            {
+                return NotFound($"Customer with PhoneNumber '{phoneNumber}' not found.");
+            }
 
-        //    return Ok(customer);
-        //}
+            return Ok(customer);
+        }
 
-        //// POST create a new customer
-        //[HttpPost]
-        //public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
-        //{
-        //    var customer = new Customer { Id = id, FirstName = firstName, LastName = lastName, PhoneNumber = phoneNumber };
-        //    await _customerRepository.AddCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
-        //    return Ok($"Customer {customer.FirstName} {customer.LastName} was created created.");
-        //}
+        // POST create a new customer
+        [HttpPost]
+        public async Task<IActionResult> CreateCustomer(int id, string firstName, string lastName, string phoneNumber)
+        {
+            var result = await _customerService.CreateCustomerAsync(id, firstName, lastName, phoneNumber);
+            return Ok(result);
+        }
 
-        //// PUT update an existing customer
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByIdAsync(id);
-        //    if (customer == null)
-        //    {
-        //        return NotFound();
-        //    }
+        // PUT update an existing customer
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
+        {
+            var updatedCustomer = await _customerService.UpdateCustomerAsync(id, customerDto);
 
-        //    customer.FirstName = customerDto.FirstName;
-        //    customer.LastName = customerDto.LastName;
-        //    customer.PhoneNumber = customerDto.PhoneNumber;
+            if (updatedCustomer == null)
+            {
+                return NotFound();
+            }
 
-        //    await _customerRepository.UpdateCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
+            return Ok(updatedCustomer);
+        }
 
-        //    var updatedDto = new CustomerDto
-        //    {
-        //        FirstName = customer.FirstName,
-        //        LastName = customer.LastName,
-        //        PhoneNumber = customer.PhoneNumber
-        //    };
+        // DELETE customer by id
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCustomer(int id)
+        {
+            var result = await _customerService.DeleteCustomerAsync(id);
 
-        //    return Ok(updatedDto);
-        //}
+            if (result == null)
+            {
+                return NotFound($"Customer with ID {id} was not found.");
+            }
 
-        //// DELETE customer by id
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteCustomer(int id)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByIdAsync(id);
-
-        //    if (customer == null)
-        //    {
-        //        return NotFound($"Customer with ID {id} not found.");
-        //    }
-
-        //    await _customerRepository.DeleteCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
-        //    return Ok($"Customer with ID {id} has been deleted.");
-        //}
-
+            return Ok(result);
+        }
     }
 } 

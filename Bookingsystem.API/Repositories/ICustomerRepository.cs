@@ -13,6 +13,5 @@ namespace BookingSystem.API.Repositories
         public Task UpdateCustomerAsync(Customer customer);
         public Task DeleteCustomerAsync(Customer customer);
         public Task<bool> SaveChangesAsync();
-
     }
 }
