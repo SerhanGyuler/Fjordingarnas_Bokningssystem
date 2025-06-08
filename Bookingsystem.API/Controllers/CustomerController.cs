@@ -93,31 +93,18 @@ namespace BookingSystem.API.Controllers
         }
 
         //// PUT update an existing customer
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
-        //{
-        //    var customer = await _customerRepository.GetCustomerByIdAsync(id);
-        //    if (customer == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCustomer(int id, CustomerDto customerDto)
+        {
+            var updatedCustomer = await _customerService.UpdateCustomerAsync(id, customerDto);
 
-        //    customer.FirstName = customerDto.FirstName;
-        //    customer.LastName = customerDto.LastName;
-        //    customer.PhoneNumber = customerDto.PhoneNumber;
+            if (updatedCustomer == null)
+            {
+                return NotFound();
+            }
 
-        //    await _customerRepository.UpdateCustomerAsync(customer);
-        //    await _customerRepository.SaveChangesAsync();
-
-        //    var updatedDto = new CustomerDto
-        //    {
-        //        FirstName = customer.FirstName,
-        //        LastName = customer.LastName,
-        //        PhoneNumber = customer.PhoneNumber
-        //    };
-
-        //    return Ok(updatedDto);
-        //}
+            return Ok(updatedCustomer);
+        }
 
         //// DELETE customer by id
         //[HttpDelete("{id}")]

@@ -10,5 +10,6 @@ namespace BookingSystem.API.Services
         public Task<Customer?> GetCustomerByFirstNameAsync(string firstName);
         public Task<Customer?> GetCustomerByLastNameAsync(string lastName);
         public Task<string> CreateCustomerAsync(int id, string firstName, string lastName, string phoneNumber);
+        public Task<CustomerDto?> UpdateCustomerAsync(int id, CustomerDto customerDto);
     }
 }

@@ -112,6 +112,29 @@ namespace BookingSystem.API.Services
 
             return $"Customer {customer.FirstName} {customer.LastName} was created.";
         }
-    }
 
+        public async Task<CustomerDto?> UpdateCustomerAsync(int id, CustomerDto customerDto)
+        {
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+            if (customer == null)
+            {
+                return null;
+            }
+
+            customer.FirstName = customerDto.FirstName;
+            customer.LastName = customerDto.LastName;
+            customer.PhoneNumber = customerDto.PhoneNumber;
+
+            await _customerRepository.UpdateCustomerAsync(customer);
+            await _customerRepository.SaveChangesAsync();
+
+            return new CustomerDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber
+            };
+        }
+    }
 }
