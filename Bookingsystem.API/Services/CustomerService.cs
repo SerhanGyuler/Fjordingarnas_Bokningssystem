@@ -148,7 +148,7 @@ namespace BookingSystem.API.Services
             await _customerRepository.DeleteCustomerAsync(customer);
             await _customerRepository.SaveChangesAsync();
 
-            return $"Customer with ID: {id} has been deleted.";
+            return $"Customer with ID {id} has been deleted.";
         }
     }
 }
