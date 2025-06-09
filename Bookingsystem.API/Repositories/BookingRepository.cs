@@ -14,6 +14,7 @@ namespace BookingSystem.API.Repositories
             _context = context;
         }
 
+        // CRUD
         public async Task<IEnumerable<Booking>> GetAllAsync()
         {
             return await _context.Bookings
@@ -61,6 +62,8 @@ namespace BookingSystem.API.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
+
+        // Business logic
         public async Task<Booking?> CreateBookingAsync(BookingInputDto bookingDto)
         {
             var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
