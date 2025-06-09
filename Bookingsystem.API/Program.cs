@@ -23,10 +23,14 @@ namespace Bookingsystem.API
             // Services 
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IDateTimeService, DateTimeService>();
+            builder.Services.AddScoped<ICustomerService, CustomerService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
+
 
             // connectionstring
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
             // Register the repositorys
             builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
