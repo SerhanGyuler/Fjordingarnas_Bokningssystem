@@ -103,47 +103,75 @@ namespace BookingSystem.Tests
 
         }
 
-        [TestMethod]
-        public async Task GetAllAsync_ReturnsCustomerEmployeeServices()
+        [DataTestMethod]
+        [DataRow(0)]  // 0 Bookings
+        [DataRow(1)]  
+        [DataRow(2)]  // 2 Bookings
+        public async Task GetAllAsync_ReturnsExpectedBookingCount_AndIncludesRelatedData(int bookingCount)
         {
             using (var context = _factory.CreateContext())
             {
                 context.Bookings.RemoveRange(context.Bookings);
                 await context.SaveChangesAsync();
 
-                var customer = new Customer { FirstName = "Alice", LastName = "Chalice", PhoneNumber = "123213" };
-                var employee = new Employee { FirstName = "Ferdinand", LastName = "Berdinand", PhoneNumber = "34343" };
-                var services = new List<Service> {
-                    new Service { ServiceName = "Tvätt", Duration = TimeSpan.FromMinutes(15), Price = 123 },
-                    new Service { ServiceName = "Klipp", Duration = TimeSpan.FromMinutes(30), Price = 143 },
-                    new Service { ServiceName = "Hårtransplantation", Duration = TimeSpan.FromMinutes(180), Price = 80 },
-                };
-
-                var booking = new Booking
+                if (bookingCount > 0)
                 {
-                    Customer = customer,
-                    Employee = employee,
-                    Services = services,
-                    StartTime = DateTime.UtcNow,
-                    EndTime = DateTime.UtcNow.AddMinutes(15),
-                    IsCancelled = false
-                };
+                    var customer = new Customer { FirstName = "Alice", LastName = "Chalice", PhoneNumber = "123213" };
+                    var employee = new Employee { FirstName = "Ferdinand", LastName = "Berdinand", PhoneNumber = "34343" };
+                    var services = new List<Service> {
+                new Service { ServiceName = "Tvätt", Duration = TimeSpan.FromMinutes(15), Price = 123 },
+                new Service { ServiceName = "Klipp", Duration = TimeSpan.FromMinutes(30), Price = 143 },
+                new Service { ServiceName = "Hårtransplantation", Duration = TimeSpan.FromMinutes(180), Price = 80 },
+            };
 
-                context.Bookings.Add(booking);
-                var result = await context.SaveChangesAsync();
+                    for (int i = 0; i < bookingCount; i++)
+                    {
+                        var booking = new Booking
+                        {
+                            Customer = customer,
+                            Employee = employee,
+                            Services = services,
+                            StartTime = DateTime.UtcNow.AddMinutes(i * 15),
+                            EndTime = DateTime.UtcNow.AddMinutes(i * 15 + 15),
+                            IsCancelled = false
+                        };
+
+                        context.Bookings.Add(booking);
+                    }
+
+                    await context.SaveChangesAsync();
+                }
             }
 
             using (var context = _factory.CreateContext())
             {
                 var repo = new BookingRepository(context);
-                //Act
                 var result = (await repo.GetAllAsync()).ToList();
 
-                Assert.AreEqual(1, result.Count);
-                Assert.AreEqual("Alice", result[0].Customer.FirstName);
-                Assert.AreEqual("Ferdinand", result[0].Employee.FirstName);
-                Assert.AreEqual("Klipp", result[0].Services.OrderBy(s => s.ServiceName).ToList()[1].ServiceName);
+                Assert.AreEqual(bookingCount, result.Count);
+
+                if (bookingCount > 0)
+                {
+                    var first = result[0];
+                    Assert.AreEqual("Alice", first.Customer.FirstName);
+                    Assert.AreEqual("Ferdinand", first.Employee.FirstName);
+                    Assert.AreEqual("Klipp", first.Services.OrderBy(s => s.ServiceName).ToList()[1].ServiceName);
+                }
             }
+        }
+
+
+        [TestMethod]
+        public async Task GetAllAsync_ReturnsEmptyList_IfNoBookings()
+        {
+            using var context = _factory.CreateContext();
+            context.Bookings.RemoveRange(context.Bookings);
+            await context.SaveChangesAsync();
+
+            var repo = new BookingRepository(context);
+            var result = (await repo.GetAllAsync()).ToList();
+
+            Assert.IsNotNull(result);
         }
 
         [TestMethod]
