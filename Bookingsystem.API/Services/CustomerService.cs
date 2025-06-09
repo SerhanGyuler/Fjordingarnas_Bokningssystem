@@ -4,7 +4,7 @@ using Fjordingarnas_Bokningssystem.Models;
 
 namespace BookingSystem.API.Services
 {
-    public class CustomerService
+    public class CustomerService : ICustomerService
     {
         private readonly ICustomerRepository _customerRepository;
 
@@ -13,7 +13,7 @@ namespace BookingSystem.API.Services
             _customerRepository = customerRepository;
         }
 
-        public async Task<List<CustomerDto>> GetAllCustomerDtosAsync()
+        public async Task<IEnumerable<CustomerDto>> GetAllCustomerDtosAsync()
         {
             var customers = await _customerRepository.GetAllCustomersAsync();
 

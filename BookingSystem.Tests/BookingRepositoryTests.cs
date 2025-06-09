@@ -93,6 +93,7 @@ namespace BookingSystem.Tests
             using (var context = _factory.CreateContext())
             {
                 var repo = new BookingRepository(context);
+                //Act
                 var result = await repo.GetBookingsForEmployeeAsync(1, null, null);
 
                 Assert.AreEqual(2, result.Count);
@@ -135,6 +136,7 @@ namespace BookingSystem.Tests
             using (var context = _factory.CreateContext())
             {
                 var repo = new BookingRepository(context);
+                //Act
                 var result = (await repo.GetAllAsync()).ToList();
 
                 Assert.AreEqual(1, result.Count);
@@ -182,6 +184,7 @@ namespace BookingSystem.Tests
             using (var context = _factory.CreateContext())
             {
                 var repo = new BookingRepository(context);
+                //Act
                 var result = await repo.GetByIdAsync(bookingId);
 
                 Assert.IsNotNull(result);
@@ -192,6 +195,9 @@ namespace BookingSystem.Tests
                 Assert.IsTrue(result.Services.Any(s => s.ServiceName == "Klipp"));
             }
         }
+
+        //[TestMethod]
+        //public async Task AddAsync_
     }
 }
 
