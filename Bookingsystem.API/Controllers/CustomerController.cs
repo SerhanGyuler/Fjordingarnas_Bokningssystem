@@ -13,9 +13,9 @@ namespace BookingSystem.API.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly CustomerService _customerService;
+        private readonly ICustomerService _customerService;
 
-        public CustomerController(CustomerService customerService)
+        public CustomerController(ICustomerService customerService)
         {
             _customerService = customerService;
         }
