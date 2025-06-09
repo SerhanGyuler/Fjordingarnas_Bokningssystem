@@ -13,7 +13,7 @@ namespace BookingSystem.API.Services
             _customerRepository = customerRepository;
         }
 
-        public async Task<IEnumerable<CustomerDto>> GetAllCustomerDtosAsync()
+        public async Task<List<CustomerDto>> GetAllCustomerDtosAsync()
         {
             var customers = await _customerRepository.GetAllCustomersAsync();
 

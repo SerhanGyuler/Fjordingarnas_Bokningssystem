@@ -5,7 +5,7 @@ namespace BookingSystem.API.Services
 {
     public interface ICustomerService
     {
-        public Task<IEnumerable<CustomerDto>> GetAllCustomerDtosAsync();
+        public Task<List<CustomerDto>> GetAllCustomerDtosAsync();
         public Task<CustomerDto?> GetCustomerDtoByIdAsync(int id);
         public Task<CustomerDto?> GetCustomerByFirstNameAsync(string firstName);
         public Task<CustomerDto?> GetCustomerByLastNameAsync(string lastName);
