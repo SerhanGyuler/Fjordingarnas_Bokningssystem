@@ -35,16 +35,15 @@ namespace BookingSystem.Tests
                 mock.Object);
 
             var result = await controller.GetBookings();
+            var okResult = result.Result as OkObjectResult;
+            Assert.IsNotNull(okResult);
 
-            Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
-            Assert.IsNotNull(result.Value as List<BookingDto>);
-            if (result.Value is List<BookingDto> bookings)
-            {
-                Assert.AreEqual(2, bookings.Count);
-            }
+            var bookings = okResult.Value as IEnumerable<BookingDto>;
+            Assert.IsNotNull(bookings);
+            Assert.AreEqual(2, bookings.Count());
         }
     }
 
-    // AI HAR SKRIVT ALLT HÄR 
+    
 
 }
