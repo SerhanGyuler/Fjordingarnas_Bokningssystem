@@ -62,40 +62,39 @@ namespace BookingSystem.API.Services
             };
         }
 
-        public async Task<NewBookingDto?> CreateBookingAsync(BookingInputDto input)
+        public async Task<(NewBookingDto? booking, string? error)> CreateBookingAsync(BookingInputDto input)
         {
-            var newBooking = await _bookingRepository.CreateBookingAsync(input);
-            if (newBooking is null) return null;
+            var (booking, error) = await _bookingRepository.CreateBookingAsync(input);
+            if (booking is null) return (null, error);
 
-            // Manual mapping kept for now (zero external dependencies, minimal change).
-            return new NewBookingDto
+            return (new NewBookingDto
             {
-                Id = newBooking.Id,
-                StartTime = newBooking.StartTime,
-                EndTime = newBooking.EndTime,
-                IsCancelled = newBooking.IsCancelled,
+                Id = booking.Id,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                IsCancelled = booking.IsCancelled,
 
                 Customer = new CustomerDto
                 {
-                    FirstName = newBooking.Customer.FirstName,
-                    LastName = newBooking.Customer.LastName,
-                    PhoneNumber = newBooking.Customer.PhoneNumber
+                    FirstName = booking.Customer.FirstName,
+                    LastName = booking.Customer.LastName,
+                    PhoneNumber = booking.Customer.PhoneNumber
                 },
 
                 Employee = new EmployeeDto
                 {
-                    FirstName = newBooking.Employee.FirstName,
-                    LastName = newBooking.Employee.LastName,
-                    PhoneNumber = newBooking.Employee.PhoneNumber
+                    FirstName = booking.Employee.FirstName,
+                    LastName = booking.Employee.LastName,
+                    PhoneNumber = booking.Employee.PhoneNumber
                 },
 
-                Services = newBooking.Services.Select(s => new ServiceDto
+                Services = booking.Services.Select(s => new ServiceDto
                 {
                     ServiceName = s.ServiceName,
                     Duration = s.Duration,
                     Price = s.Price
                 }).ToList()
-            };
+            }, null);
         }
 
         public async Task DeleteAsync(int id)
