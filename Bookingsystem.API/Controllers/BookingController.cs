@@ -62,14 +62,14 @@ namespace BookingSystem.API.Controllers
 
         // POST (Create Booking)
         [HttpPost]
-        public async Task<ActionResult<NewBookingDto>> CreateBooking(
-        [FromBody] BookingInputDto bookingInput)
+        public async Task<ActionResult<NewBookingDto>> CreateBooking([FromBody] BookingInputDto bookingInput)
         {
-            var result = await _bookingService.CreateBookingAsync(bookingInput);
+            (NewBookingDto booking, string error) = await _bookingService.CreateBookingAsync(bookingInput);
 
-            return result is null
-                ? BadRequest("Unknown CustomerId, EmployeeId or ServiceIds.")
-                : Ok(result);
+            if (booking is null)
+                return BadRequest(error ?? "Unknown error.");
+
+            return Ok(booking);
         }
 
 
@@ -146,6 +146,7 @@ namespace BookingSystem.API.Controllers
 
             return Ok($"Booking with ID {id} has been rescheduled.");
         }
+
 
         //[HttpGet("AvailableBookingSpots")]
         //public async Task<IActionResult> GetAvailableTimes([FromQuery] int serviceId, [FromQuery] int employeeId)
