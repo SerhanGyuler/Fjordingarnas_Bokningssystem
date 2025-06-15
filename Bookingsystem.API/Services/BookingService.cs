@@ -218,8 +218,8 @@ namespace BookingSystem.API.Services
             }
             else
             {
-                var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
-                var endDateWeek = startDateWeek.AddDays(7);
+                var startDateWeek = now.Date.AddDays(-(int)(now.DayOfWeek == DayOfWeek.Sunday ? 6 : now.DayOfWeek - DayOfWeek.Monday));
+                var endDateWeek = startDateWeek.AddDays(6);
                 return (startDateWeek, endDateWeek);
             }
         }
@@ -235,6 +235,7 @@ namespace BookingSystem.API.Services
                 .Select(s => new BookingPriceDto
                 {
                     ServiceName = s.ServiceName,
+                    Duration = s.Duration,
                     Price = s.Price
                 })
                 .ToList();
@@ -242,7 +243,8 @@ namespace BookingSystem.API.Services
             return new BookingPriceOverviewDto
             {
                 Prices = servicePrices,
-                Total = servicePrices.Sum(s => s.Price)
+                Total = servicePrices.Sum(s => s.Price),
+                TotalDuration = $"{servicePrices.Sum(s => s.Duration.Minutes)} min"
             };
         }
     }
