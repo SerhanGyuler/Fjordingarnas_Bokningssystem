@@ -13,5 +13,7 @@ namespace BookingSystem.API.Services
         public Task<(bool Success, string? Error)> RescheduleBookingAsync(int id, [FromBody] RescheduleBookingDto dto);
         public Task<BookingsOverviewResponseDto> GetBookingsOverviewAsync(string range);
         public Task<BookingPriceOverviewDto?> GetPriceOfBookingAsync(int bookingId);
+        public Task<List<AvailableTimeSpotDto>?> GetAvailableBookingSpotsAsync(int serviceId, int employeeId);
+
     }
 }
