@@ -247,5 +247,53 @@ namespace BookingSystem.API.Services
                 TotalDuration = $"{servicePrices.Sum(s => s.Duration.Minutes)} min"
             };
         }
+
+        public async Task<List<AvailableTimeSpotDto>?> GetAvailableBookingSpotsAsync(int serviceId, int employeeId)
+        {
+            // Hämta tjänsten
+            var service = await _serviceRepository.GetServiceByIdAsync(serviceId);
+            if (service == null)
+                return null;
+
+            var employee = await _employeeRepository.GetByIdWithBookingsAndServicesAsync(employeeId);
+            if (employee == null)
+                return null;
+
+            // check if employee offers chosen service
+            if (!employee.Services.Any(s => s.Id == serviceId))
+                return new List<AvailableTimeSpotDto>();
+
+            var availableSpots = new List<AvailableTimeSpotDto>();
+            var today = DateTime.Today;
+            var duration = service.Duration;
+
+            for (int daysAhead = 1; daysAhead <= 30; daysAhead++)
+            {
+                var date = today.AddDays(daysAhead);
+
+                for (var time = new TimeSpan(9, 0, 0); time + service.Duration <= new TimeSpan(16, 0, 0); time += duration)
+                {
+                    var startDateTime = date.Add(time);
+                    var endDateTime = startDateTime.Add(service.Duration);
+
+                    var isOccupied = employee.Bookings
+                        .Any(b => !b.IsCancelled &&
+                                  b.StartTime < endDateTime &&
+                                  b.EndTime > startDateTime);
+
+                    if (!isOccupied)
+                    {
+                        availableSpots.Add(new AvailableTimeSpotDto
+                        {
+                            EmployeeId = employee.Id,
+                            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                            StartTime = startDateTime,
+                            EndTime = endDateTime
+                        });
+                    }
+                }
+            }
+            return availableSpots;
+        }
     }
 }

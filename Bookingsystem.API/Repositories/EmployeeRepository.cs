@@ -31,5 +31,14 @@ namespace BookingSystem.API.Repositories
                 .Include(e => e.Services)
                 .ToListAsync();
         }
+
+        public async Task<Employee?> GetByIdWithBookingsAndServicesAsync(int id)
+        {
+            return await _context.Employees
+                .Include(e => e.Bookings)
+                .Include(e => e.Services)
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
     }
 }

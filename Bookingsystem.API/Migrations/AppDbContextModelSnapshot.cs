@@ -128,18 +128,18 @@ namespace BookingSystem.API.Migrations
                             Id = 1,
                             CustomerId = 1,
                             EmployeeId = 1,
-                            EndTime = new DateTime(2025, 5, 27, 8, 45, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 6, 11, 8, 45, 0, 0, DateTimeKind.Utc),
                             IsCancelled = false,
-                            StartTime = new DateTime(2025, 5, 27, 8, 0, 0, 0, DateTimeKind.Utc)
+                            StartTime = new DateTime(2025, 6, 11, 8, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
                             CustomerId = 2,
                             EmployeeId = 2,
-                            EndTime = new DateTime(2025, 5, 28, 11, 30, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 6, 12, 11, 30, 0, 0, DateTimeKind.Utc),
                             IsCancelled = false,
-                            StartTime = new DateTime(2025, 5, 28, 11, 0, 0, 0, DateTimeKind.Utc)
+                            StartTime = new DateTime(2025, 6, 12, 11, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
