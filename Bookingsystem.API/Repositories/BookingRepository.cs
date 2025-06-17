@@ -1,6 +1,8 @@
 ﻿using BookingSystem.API.Data;
 using BookingSystem.API.Models.DTOs;
 using Fjordingarnas_Bokningssystem.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.API.Repositories
@@ -62,10 +64,20 @@ namespace BookingSystem.API.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-
-        // Business logic
-        public async Task<Booking?> CreateBookingAsync(BookingInputDto bookingDto)
+        public async Task<(Booking? booking, string? error)> CreateBookingAsync(BookingInputDto bookingDto)
         {
+            var startTimeUtc = DateTime.SpecifyKind(bookingDto.StartTime, DateTimeKind.Utc);
+            var endTimeUtc = DateTime.SpecifyKind(bookingDto.EndTime, DateTimeKind.Utc);
+
+            if (await _context.Bookings.AnyAsync(b => 
+            b.StartTime < bookingDto.EndTime && 
+            b.EndTime > bookingDto.StartTime &&
+            b.Employee.Id == bookingDto.EmployeeId &&
+            !b.IsCancelled))
+            {
+                return (null, "Time slot not available for this employee");
+            }
+            
             var customer = await _context.Customers.FindAsync(bookingDto.CustomerId);
             var employee = await _context.Employees.FindAsync(bookingDto.EmployeeId);
             var services = await _context.Services
@@ -74,7 +86,7 @@ namespace BookingSystem.API.Repositories
 
             if (customer == null || employee == null || services.Count != bookingDto.ServiceIds.Count)
             {
-                return null;
+                return (null, "Unknown CustomerId, EmployeeId or ServiceIds.");
             }
 
             var newBooking = new Booking
@@ -90,7 +102,7 @@ namespace BookingSystem.API.Repositories
             await _context.Bookings.AddAsync(newBooking);
             await _context.SaveChangesAsync();
 
-            return newBooking;
+            return (newBooking, null);
         }
 
         public async Task<List<Booking>> GetBookingsInDateRangeAsync(DateTime startDate, DateTime endDate)
@@ -118,5 +130,16 @@ namespace BookingSystem.API.Repositories
 
             return await query.OrderBy(b => b.StartTime).ToListAsync();
         }
+
+        public async Task<List<Booking>> GetEmployeeBookingsAsync(int employeeId, DateTime from, DateTime to)
+        {
+            return await _context.Bookings
+        .Where(b => b.EmployeeId == employeeId
+        && !b.IsCancelled
+            && b.StartTime < to
+            && b.EndTime > from)
+        .ToListAsync();
+        }
+
     }
 }

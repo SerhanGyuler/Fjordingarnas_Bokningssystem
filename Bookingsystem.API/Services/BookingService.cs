@@ -62,40 +62,39 @@ namespace BookingSystem.API.Services
             };
         }
 
-        public async Task<NewBookingDto?> CreateBookingAsync(BookingInputDto input)
+        public async Task<(NewBookingDto? booking, string? error)> CreateBookingAsync(BookingInputDto input)
         {
-            var newBooking = await _bookingRepository.CreateBookingAsync(input);
-            if (newBooking is null) return null;
+            var (booking, error) = await _bookingRepository.CreateBookingAsync(input);
+            if (booking is null) return (null, error);
 
-            // Manual mapping kept for now (zero external dependencies, minimal change).
-            return new NewBookingDto
+            return (new NewBookingDto
             {
-                Id = newBooking.Id,
-                StartTime = newBooking.StartTime,
-                EndTime = newBooking.EndTime,
-                IsCancelled = newBooking.IsCancelled,
+                Id = booking.Id,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                IsCancelled = booking.IsCancelled,
 
                 Customer = new CustomerDto
                 {
-                    FirstName = newBooking.Customer.FirstName,
-                    LastName = newBooking.Customer.LastName,
-                    PhoneNumber = newBooking.Customer.PhoneNumber
+                    FirstName = booking.Customer.FirstName,
+                    LastName = booking.Customer.LastName,
+                    PhoneNumber = booking.Customer.PhoneNumber
                 },
 
                 Employee = new EmployeeDto
                 {
-                    FirstName = newBooking.Employee.FirstName,
-                    LastName = newBooking.Employee.LastName,
-                    PhoneNumber = newBooking.Employee.PhoneNumber
+                    FirstName = booking.Employee.FirstName,
+                    LastName = booking.Employee.LastName,
+                    PhoneNumber = booking.Employee.PhoneNumber
                 },
 
-                Services = newBooking.Services.Select(s => new ServiceDto
+                Services = booking.Services.Select(s => new ServiceDto
                 {
                     ServiceName = s.ServiceName,
                     Duration = s.Duration,
                     Price = s.Price
                 }).ToList()
-            };
+            }, null);
         }
 
         public async Task DeleteAsync(int id)
@@ -219,8 +218,8 @@ namespace BookingSystem.API.Services
             }
             else
             {
-                var startDateWeek = now.Date.AddDays(-(int)now.DayOfWeek);
-                var endDateWeek = startDateWeek.AddDays(7);
+                var startDateWeek = now.Date.AddDays(-(int)(now.DayOfWeek == DayOfWeek.Sunday ? 6 : now.DayOfWeek - DayOfWeek.Monday));
+                var endDateWeek = startDateWeek.AddDays(6);
                 return (startDateWeek, endDateWeek);
             }
         }
@@ -236,6 +235,7 @@ namespace BookingSystem.API.Services
                 .Select(s => new BookingPriceDto
                 {
                     ServiceName = s.ServiceName,
+                    Duration = s.Duration,
                     Price = s.Price
                 })
                 .ToList();
@@ -243,7 +243,8 @@ namespace BookingSystem.API.Services
             return new BookingPriceOverviewDto
             {
                 Prices = servicePrices,
-                Total = servicePrices.Sum(s => s.Price)
+                Total = servicePrices.Sum(s => s.Price),
+                TotalDuration = $"{servicePrices.Sum(s => s.Duration.Minutes)} min"
             };
         }
     }
