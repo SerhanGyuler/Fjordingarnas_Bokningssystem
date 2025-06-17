@@ -9,7 +9,7 @@ namespace BookingSystem.API.Repositories
         public Task<List<Service>> GetServicesByBookingIdAsync(int bookingId);
         public Task<Service> CreateService(ServiceInputDto service);
         Task<bool> DeleteServiceAsync(int id);
-        Task<bool> UpdateServiceAsync(Service service, ServiceInputDto updateDto);
+        Task<Service> UpdateServiceAsync(Service service, ServiceInputDto updateDto);
         Task<Service?> GetServiceByIdAsync(int id);
     }
 }
