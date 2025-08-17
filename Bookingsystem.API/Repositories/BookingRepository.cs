@@ -141,5 +141,16 @@ namespace BookingSystem.API.Repositories
         .ToListAsync();
         }
 
+        public async Task<IEnumerable<Booking>> GetBookingsByCustomerAsync(int customerId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Services)
+                .Include(b => b.Employee)
+                .Include(b => b.Customer)
+                .Where(b => b.CustomerId == customerId)
+                .OrderByDescending(b => b.StartTime)
+                .ToListAsync();
+        }
+
     }
 }

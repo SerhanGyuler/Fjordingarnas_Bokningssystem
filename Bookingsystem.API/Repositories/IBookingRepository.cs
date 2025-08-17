@@ -16,5 +16,6 @@ namespace BookingSystem.API.Repositories
         public Task<List<Booking>> GetBookingsInDateRangeAsync(DateTime startDate, DateTime endDate);
         public Task<List<Booking>> GetBookingsForEmployeeAsync(int employeeId, DateTime? startDate, DateTime? endDate);
         public Task <List<Booking>>GetEmployeeBookingsAsync(int employeeId, DateTime today, DateTime until);
+        public Task<IEnumerable<Booking>> GetBookingsByCustomerAsync(int customerId);
     }
 }

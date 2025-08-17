@@ -2,6 +2,7 @@
 using BookingSystem.API.Repositories;
 using BookingSystem.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 
 namespace BookingSystem.API.Controllers
 {
@@ -88,6 +89,36 @@ namespace BookingSystem.API.Controllers
                 Console.WriteLine($"Fel i GetBookingsForEmployee: {ex.Message}");
                 return StatusCode(500, "Ett oväntat fel inträffade.");
             }
+        }
+
+        [HttpPost("{employeeId}/unavailability")]
+        public async Task<IActionResult> AddUnavailability(int employeeId, [FromBody] UnavailabilityDto dto)
+        {
+            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            if (employee == null)
+                return NotFound("Kunde inte hitta frisör.");
+
+            var period = new UnavailablePeriod
+            {
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Reason = dto.Reason
+            };
+
+            await _employeeRepository.AddUnavailabilityAsync(employeeId, period);
+
+            return Ok("Otillgänglighet registrerat.");
+        }
+
+        [HttpGet("{employeeId}/unavailability")]
+        public async Task<IActionResult> GetUnavailability(int employeeId)
+        {
+            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            if (employee == null)
+                return NotFound("Kunde inte hitta frisör.");
+
+            var periods = await _employeeRepository.GetUnavailabilityAsync(employeeId);
+            return Ok(periods);
         }
     }
 }

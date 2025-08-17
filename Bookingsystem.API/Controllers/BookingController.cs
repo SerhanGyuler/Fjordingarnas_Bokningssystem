@@ -134,14 +134,7 @@ namespace BookingSystem.API.Controllers
 
             if (!success) 
             {
-                if (error?.Contains("Not found") == true)
-                {
-                    return NotFound(error);
-                }
-                else if (error?.Contains("reschedule") == true)
-                {
-                    return BadRequest("Cannot reschedule a cancelled booking.");
-                }
+                return BadRequest(error);
             }
 
             return Ok($"Booking with ID {id} has been rescheduled.");
@@ -180,6 +173,17 @@ namespace BookingSystem.API.Controllers
                 return NotFound($"Booking with ID {id} not found.");
 
             return Ok(priceOverview);
+        }
+
+        [HttpGet("customer/{customerId}/history")]
+        public async Task<IActionResult> GetCustomerBookingHistory(int customerId)
+        {
+            var bookings = await _bookingService.GetBookingsByCustomerAsync(customerId);
+
+            if (!bookings.Any())
+                return NotFound("No bookings found for this customer.");
+
+            return Ok(bookings);
         }
     }
 }

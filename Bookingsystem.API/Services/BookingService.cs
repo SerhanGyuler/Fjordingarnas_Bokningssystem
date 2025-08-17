@@ -1,5 +1,6 @@
 ﻿using BookingSystem.API.Models.DTOs;
 using BookingSystem.API.Repositories;
+using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingSystem.API.Services
@@ -64,8 +65,23 @@ namespace BookingSystem.API.Services
 
         public async Task<(NewBookingDto? booking, string? error)> CreateBookingAsync(BookingInputDto input)
         {
+            var employee = await _employeeRepository.GetByIdWithBookingsServicesAndUnavailabilityAsync(input.EmployeeId);
+            if (employee == null)
+                return (null, "Employee not found");
+
+            var bookingStart = input.StartTime;
+            var bookingEnd = input.EndTime;
+
+            bool isUnavailable = employee.UnavailablePeriods.Any(p =>
+                bookingStart < p.EndDate && bookingEnd > p.StartDate
+            );
+
+            if (isUnavailable)
+                return (null, "Employee is unavailable during this period");
+
             var (booking, error) = await _bookingRepository.CreateBookingAsync(input);
             if (booking is null) return (null, error);
+
 
             return (new NewBookingDto
             {
@@ -167,6 +183,17 @@ namespace BookingSystem.API.Services
                 return (false, $"Cannot reschedule a cancelled booking.");
             }
 
+            var employee = await _employeeRepository.GetByIdWithBookingsServicesAndUnavailabilityAsync(booking.EmployeeId);
+            if (employee == null)
+                return (false, "Employee not found");
+
+            bool isUnavailable = employee.UnavailablePeriods.Any(p =>
+                dto.NewStartTime < p.EndDate && dto.NewEndTime > p.StartDate
+            );
+
+            if (isUnavailable)
+                return (false, "Employee is unavailable during this period");
+
             booking.StartTime = dto.NewStartTime;
             booking.EndTime = dto.NewEndTime;
 
@@ -255,7 +282,7 @@ namespace BookingSystem.API.Services
             if (service == null)
                 return null;
 
-            var employee = await _employeeRepository.GetByIdWithBookingsAndServicesAsync(employeeId);
+            var employee = await _employeeRepository.GetByIdWithBookingsServicesAndUnavailabilityAsync(employeeId);
             if (employee == null)
                 return null;
 
@@ -294,6 +321,24 @@ namespace BookingSystem.API.Services
                 }
             }
             return availableSpots;
+        }
+        public async Task<IEnumerable<BookingDto>> GetBookingsByCustomerAsync(int customerId)
+        {
+            var bookings = await _bookingRepository.GetBookingsByCustomerAsync(customerId);
+
+            if (bookings == null || !bookings.Any())
+                return Enumerable.Empty<BookingDto>();
+
+            return bookings.Select(b => new BookingDto
+            {
+                Id = b.Id,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                IsCancelled = b.IsCancelled,
+                CustomerName = b.Customer != null ? $"{b.Customer.FirstName} {b.Customer.LastName}" : "Unknown Customer",
+                EmployeeName = b.Employee != null ? $"{b.Employee.FirstName} {b.Employee.LastName}" : "Unknown Employee",
+                Services = b.Services.Select(s => s.ServiceName).ToList()
+            });
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace BookingSystem.API.Data
 {
@@ -9,6 +10,7 @@ namespace BookingSystem.API.Data
         public virtual DbSet<Customer> Customers { get; set; }
         public virtual DbSet<Employee> Employees { get; set; }
         public virtual DbSet<Service> Services { get; set; }
+        public virtual DbSet<UnavailablePeriod> UnavailablePeriods { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

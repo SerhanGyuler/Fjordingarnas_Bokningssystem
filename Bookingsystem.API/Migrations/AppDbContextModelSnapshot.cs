@@ -128,18 +128,18 @@ namespace BookingSystem.API.Migrations
                             Id = 1,
                             CustomerId = 1,
                             EmployeeId = 1,
-                            EndTime = new DateTime(2025, 6, 11, 8, 45, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 8, 18, 8, 45, 0, 0, DateTimeKind.Utc),
                             IsCancelled = false,
-                            StartTime = new DateTime(2025, 6, 11, 8, 0, 0, 0, DateTimeKind.Utc)
+                            StartTime = new DateTime(2025, 8, 18, 8, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
                             CustomerId = 2,
                             EmployeeId = 2,
-                            EndTime = new DateTime(2025, 6, 12, 11, 30, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 8, 19, 11, 30, 0, 0, DateTimeKind.Utc),
                             IsCancelled = false,
-                            StartTime = new DateTime(2025, 6, 12, 11, 0, 0, 0, DateTimeKind.Utc)
+                            StartTime = new DateTime(2025, 8, 19, 11, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -306,6 +306,33 @@ namespace BookingSystem.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Models.UnavailablePeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("UnavailablePeriods");
+                });
+
             modelBuilder.Entity("BookingService", b =>
                 {
                     b.HasOne("Fjordingarnas_Bokningssystem.Models.Booking", null)
@@ -355,6 +382,17 @@ namespace BookingSystem.API.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("Models.UnavailablePeriod", b =>
+                {
+                    b.HasOne("Fjordingarnas_Bokningssystem.Models.Employee", "Employee")
+                        .WithMany("UnavailablePeriods")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("Fjordingarnas_Bokningssystem.Models.Customer", b =>
                 {
                     b.Navigation("Bookings");
@@ -363,6 +401,8 @@ namespace BookingSystem.API.Migrations
             modelBuilder.Entity("Fjordingarnas_Bokningssystem.Models.Employee", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("UnavailablePeriods");
                 });
 #pragma warning restore 612, 618
         }

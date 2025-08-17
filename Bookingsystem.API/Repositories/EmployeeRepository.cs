@@ -1,6 +1,7 @@
 ﻿using BookingSystem.API.Data;
 using Fjordingarnas_Bokningssystem.Models;
 using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace BookingSystem.API.Repositories
 {
@@ -32,12 +33,40 @@ namespace BookingSystem.API.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Employee?> GetByIdWithBookingsAndServicesAsync(int id)
+        public async Task<Employee?> GetByIdWithBookingsServicesAndUnavailabilityAsync(int id)
         {
             return await _context.Employees
                 .Include(e => e.Bookings)
                 .Include(e => e.Services)
+                .Include(e => e.UnavailablePeriods)
                 .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task AddUnavailabilityAsync(int employeeId, UnavailablePeriod period)
+        {
+            period.EmployeeId = employeeId;
+            await _context.Set<UnavailablePeriod>().AddAsync(period);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<UnavailablePeriod>> GetUnavailabilityAsync(int employeeId)
+        {
+            return await _context.Set<UnavailablePeriod>()
+                .Where(p => p.EmployeeId == employeeId)
+                .ToListAsync();
+        }
+
+        public async Task<bool> IsAvailableAsync(int employeeId, DateTime start, DateTime end)
+        {
+            return !await _context.Set<UnavailablePeriod>()
+                .AnyAsync(p => p.EmployeeId == employeeId &&
+                               start < p.EndDate &&
+                               end > p.StartDate);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
 
     }

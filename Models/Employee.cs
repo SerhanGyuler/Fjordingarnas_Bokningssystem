@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -18,5 +19,7 @@ namespace Fjordingarnas_Bokningssystem.Models
         public string? PhoneNumber { get; set; }
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public ICollection<Service> Services { get; set; } = new List<Service>();
+        public ICollection<UnavailablePeriod> UnavailablePeriods { get; set; } = new List<UnavailablePeriod>();
+
     }
 }

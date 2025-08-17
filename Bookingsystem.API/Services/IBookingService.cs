@@ -14,6 +14,7 @@ namespace BookingSystem.API.Services
         public Task<BookingsOverviewResponseDto> GetBookingsOverviewAsync(string range);
         public Task<BookingPriceOverviewDto?> GetPriceOfBookingAsync(int bookingId);
         public Task<List<AvailableTimeSpotDto>?> GetAvailableBookingSpotsAsync(int serviceId, int employeeId);
+        public Task<IEnumerable<BookingDto>> GetBookingsByCustomerAsync(int customerId);
 
     }
 }
